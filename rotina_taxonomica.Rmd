@@ -1,0 +1,68 @@
+---
+title: "Pipeline limpeza dados"
+author: "Gabriel Nakamura"
+date: "2025-03-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Download e limpeza inicial das variáveis e pacotes necessários
+
+```{r}
+library(dplyr)
+library(readr)
+library(stringr)
+
+```
+
+
+# Limpeza taxonômica e harmonização  
+
+Dados utilizados 
+
+- PBDB: backbone taxonômico
+- NOW: dados de ocorrência 
+
+
+Dados de ocorrencia NOW
+```{r}
+occ_now <- read.csv(here::here("data", "now_data.csv"), sep = ";")
+
+occ_now2 <- 
+  occ_now |> 
+  mutate(genus_species = paste(GENUS, SPECIES, sep = " "))
+```
+
+
+## Limpeza taxonômica 
+
+## Harmonização 
+
+Os dados da backbone taxonomica foram baixados do pbdb, mas eles vem com colunas repetidas
+    aqui limpamos essas colunas
+    
+```{r}
+back_tax <- read.csv(here::here("data", "pbdb_taxa_250318_carnivora_namao.csv"), sep = ";", skip = 15)
+
+# removendo colunas repetidas
+# df_back_cleaned <- 
+#   back_tax  |> 
+#   select(-matches("\\."))
+
+
+```
+
+Remover colunas desnecessárias para a backbone taxonômica
+
+```{r}
+df_back_cleaned <- 
+  back_tax |> 
+  select(order, family, genus, taxon_name, taxon_attr, accepted_name, accepted_rank,  ref_author, ref_pubyr)
+```
+
+### Obtenção de lista de autoridade taxonômica
+
+### Padronização da lista
