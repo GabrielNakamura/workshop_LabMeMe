@@ -8,7 +8,7 @@ output:
     code_download: true
 output_dir: "."
 navbar:
-  title: "Workshop LabMeMe - processamento de dados paleontológicos"
+  title: "Workshop LabMeMe - processamento de dados a partir de registros fósseis"
   left:
     - text: "Introdução"
       href: index.html
