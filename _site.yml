@@ -1,0 +1,24 @@
+name: "workshop_labmeme"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: true
+    code_download: true
+output_dir: "."
+navbar:
+  title: "Workshop LabMeMe - processamento de dados paleontológicos"
+  left:
+    - text: "Introdução"
+      href: index.html
+    - text: "Módulo 1 - download e processamento de dados de ocorrência"
+      href: mod1_downaload_processamento.html
+    - text: "Módulo 2 - harmonização taxonômica"
+      menu:
+      - text: "Checagem taxonômica"
+        href: rotina_taxonomica.html
+      - text: "Harmonização com diferentes taxonomias"
+        href: mod2_taxonomias.html
+    - text: "Módulo 3 - output de dados"
+      href: mod3_output.html

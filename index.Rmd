@@ -1,0 +1,9 @@
+---
+title: "Pipeline limpeza e processamento de dados paleontológicos - LabMeMe"
+output: html_document
+---
+
+# Apresentação
+
+Aqui a figura esquemática do Tiago com os módulos e explicando o funcionamento do
+    documento

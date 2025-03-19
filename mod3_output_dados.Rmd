@@ -1,0 +1,9 @@
+---
+title: "Output de dados"
+author: "Gabriel Nakamura"
+date: "2025-03-19"
+output: html_document
+---
+
+
+# Output de dados
