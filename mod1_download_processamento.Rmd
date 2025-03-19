@@ -7,11 +7,32 @@ output: html_document
 
 # Download de dados
 
+Download dados PBDB e NOW. Ambos foram baixados direto a partir do site. Utilizamos dados
+    de Carnivora
+
 ## Bases de dados usadas
 
 ### PBDB
 
+Dados brutos vindos do PBDB
+
+```{r}
+df_pbdb <- read.csv(here::here("data", "pbdb_data.csv"), sep = ";")
+```
+
 ### NOW
+
+Dados brutos vindos do NOW
+
+```{r}
+df_now <- read.csv(here::here("data", "now_data.csv"), sep = ";")
+```
+
+
+
+
+
+
 
 
 # Seleção de variáveis das ocorrências

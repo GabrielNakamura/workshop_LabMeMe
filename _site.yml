@@ -13,9 +13,11 @@ navbar:
     - text: "Introdução"
       href: index.html
     - text: "Módulo 1 - download e processamento de dados de ocorrência"
-      href: mod1_downaload_processamento.html
+      href: mod1_download_processamento.html
     - text: "Módulo 2 - harmonização taxonômica"
       menu:
+      - text: "Processamento backbone taxonomico"
+        href: mod2_processameto_backbone_taxonomico.html
       - text: "Checagem taxonômica"
         href: rotina_taxonomica.html
       - text: "Harmonização com diferentes taxonomias"

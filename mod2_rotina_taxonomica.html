@@ -13,7 +13,7 @@
 
 <meta name="date" content="2025-03-18" />
 
-<title>Pipeline limpeza dados</title>
+<title>Harmonizando taxonomia de ocorrências</title>
 
 <script src="site_libs/header-attrs-2.28/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -423,7 +423,7 @@ div.tocify {
   <a href="index.html">Introdução</a>
 </li>
 <li>
-  <a href="mod1_downaload_processamento.html">Módulo 1 - download e processamento de dados de ocorrência</a>
+  <a href="mod1_download_processamento.html">Módulo 1 - download e processamento de dados de ocorrência</a>
 </li>
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -432,6 +432,9 @@ div.tocify {
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="mod2_processameto_backbone_taxonomico.html">Processamento backbone taxonomico</a>
+    </li>
     <li>
       <a href="rotina_taxonomica.html">Checagem taxonômica</a>
     </li>
@@ -462,7 +465,7 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Pipeline limpeza dados</h1>
+<h1 class="title toc-ignore">Harmonizando taxonomia de ocorrências</h1>
 <h4 class="author">Gabriel Nakamura</h4>
 <h4 class="date">2025-03-18</h4>
 
@@ -484,19 +487,102 @@ class="section level1">
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">library</span>(stringr)</span></code></pre></div>
 </div>
-<div id="limpeza-taxonômica-e-harmonização" class="section level1">
-<h1>Limpeza taxonômica e harmonização</h1>
-<p>Dados utilizados</p>
+<div id="dados-necessários-para-essa-rotina" class="section level1">
+<h1>Dados necessários para essa rotina</h1>
 <ul>
-<li>PBDB: backbone taxonômico</li>
-<li>NOW: dados de ocorrência</li>
+<li><p>Backbone taxonômica</p></li>
+<li><p>Dados de ocorrência que contenha, no mínimo, o nível de
+identificação da ocorrência</p></li>
 </ul>
-<p>Dados de ocorrencia NOW</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>occ_now <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;now_data.csv&quot;</span>), <span class="at">sep =</span> <span class="st">&quot;;&quot;</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>occ_now2 <span class="ot">&lt;-</span> </span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  occ_now <span class="sc">|&gt;</span> </span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">genus_species =</span> <span class="fu">paste</span>(GENUS, SPECIES, <span class="at">sep =</span> <span class="st">&quot; &quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>df_backbone_pbdb <span class="ot">&lt;-</span> </span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;processed&quot;</span>, <span class="st">&quot;pbdb_backbone_carn_250308.csv&quot;</span>))</span></code></pre></div>
+<div id="dados-de-ocorrencia-now" class="section level2">
+<h2>Dados de ocorrencia NOW</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>df_occ_now <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;now_data.csv&quot;</span>), <span class="at">sep =</span> <span class="st">&quot;;&quot;</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>df_occ_now2 <span class="ot">&lt;-</span> </span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  df_occ_now <span class="sc">|&gt;</span> </span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">genus_species =</span> <span class="fu">paste</span>(GENUS, SPECIES, <span class="at">sep =</span> <span class="st">&quot;_&quot;</span>))</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>df_occ_now3 <span class="ot">&lt;-</span> </span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  df_occ_now2 <span class="sc">|&gt;</span> </span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  <span class="fu">select</span>(ORDER, FAMILY, GENUS, SPECIES, genus_species, LAT, LONG)</span></code></pre></div>
+</div>
+</div>
+<div id="padronizando-backbone-taxonômica" class="section level1">
+<h1>Padronizando backbone taxonômica</h1>
+<div id="backbone-taxonômica-pbdb" class="section level2">
+<h2>backbone taxonômica PBDB</h2>
+<p>Aqui realizamos uma padronização de nomes de autores…[Thais]</p>
+<p>Usando a backbone já processada no script
+´mod2_processamento_backbone_taxonomico.Rmd´</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>vec_spp_consensus <span class="ot">&lt;-</span> </span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="fu">match</span>(df_backbone_pbdb<span class="sc">$</span>pbdb_accepted_name, df_occ_now3<span class="sc">$</span>genus_species)[<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">match</span>(df_backbone_pbdb<span class="sc">$</span>pbdb_accepted_name, df_occ_now3<span class="sc">$</span>genus_species))]</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>df_consensus_tax_occ <span class="ot">&lt;-</span> </span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  df_occ_now3[vec_spp_consensus, ]</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>df_noconsensus_tax_occ <span class="ot">&lt;-</span> </span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  df_occ_now3[<span class="sc">-</span>vec_spp_consensus, ]</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>vec_synonym <span class="ot">&lt;-</span> </span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>  <span class="fu">match</span>(df_backbone_pbdb<span class="sc">$</span>pbdb_taxon_name, df_noconsensus_tax_occ<span class="sc">$</span>genus_species)[<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">match</span>(df_backbone_pbdb<span class="sc">$</span>pbdb_taxon_name, df_noconsensus_tax_occ<span class="sc">$</span>genus_species))]</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>df_synonym_tax <span class="ot">&lt;-</span> df_noconsensus_tax_occ[vec_synonym, ]</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="fu">match</span>(df_synonym_tax<span class="sc">$</span>genus_species, df_backbone_pbdb<span class="sc">$</span>pbdb_taxon_name)</span></code></pre></div>
+<pre><code>##   [1]   20   30   40   57   71   80   83   89   90   96   98  111  118  120  121
+##  [16]  123  124  130  131  135  136  142  148  150  153  154  162  164  171  172
+##  [31]  176  178  183  187  189  190  198  201  202  204  206  207  211  212  220
+##  [46]  235  236  239  245  248  258  262  263  277  279  284  287  291  296  308
+##  [61]  309  344  346  350  353  357  358  362  371  383  386  396  400  429  433
+##  [76]  450  458  459  469  473  475  502  517  519  530  531  538  540  548  549
+##  [91]  552  554  568  583  586  591  596  598  610  619  622  633  636  643  647
+## [106]  655  656  668  670  671  721  722  725  741  755  758  771  776  777  779
+## [121]  819  823  826  827  830  831  840  841  860  882  890  896  902  906  908
+## [136]  910  920  922  923  924  928  930  932  936  938  939  957  959  972  973
+## [151]  976  977  980  989  992  997 1000 1001 1002 1003 1006 1008 1023 1026 1035
+## [166] 1037 1055 1058 1069 1070 1075 1076 1078 1099 1557 1560 1571 1584 1589 1590
+## [181] 1611 1616 1622 1623 1625 1637 1639 1665 1667 1675 1679 1682 1703 1704 1709
+## [196] 1710 1711 1713 1715 1716 1719 1722 1762 1763 1764 1780 1791 1794 1801 1805
+## [211] 1806 1807 1811 1826 1828 1836 1849 1866 1875 1876 1881 1884 1902 1925 1942
+## [226] 1949 1966 1975 1990 2007 2051 2052 2057 2058 2059 2063 2064 2069 2073 2075
+## [241] 2078 2079 2080 2085 2088 2091 2092 2093 2099 2101 2103 2105 2106 2109 2114
+## [256] 2117 2118 2121 2124 2125 2127 2141 2143 2165 2175 2177 2185 2186 2191 2210
+## [271] 2214 2258 2305 2313 2319 2324 2330 2377 2391 2405 2406 2410 2412 2433 2438
+## [286] 2444 2452 2454 2456 2459 2463 2468 2470 2472 2485 2494 2501 2506 2509 2517
+## [301] 2520 2544 2570 2572 2596 2603 2610 2612 2614 2621 2622 2630 2632 2661 2671
+## [316] 2675 2679 2683 2687 2688 2694 2699 2700 2722 2728 2730 2745 2746 2747 2748
+## [331] 2750 2758 2763 2764 2769 2771 2786 2789 2793 2794 2802 2816 2820 2830 2831
+## [346] 2846 2849 2852 2855 2867 2893 2912 2920 2926 2934 2936 2947 2953 2959 2960
+## [361] 2961 2966 2984 2985 2986 2988 2991 2997 3001 3003 3004 3008 3010 3011 3013
+## [376] 3015 3016 3017 3022 3029 3032 3034 3036 3040 3042 3043 3046 3047 3053 3057
+## [391] 3059 3062 3063 3066 3067 3069 3070 3071 3072 3073 3076 3078 3085 3086 3087
+## [406] 3090 3100 3104 3107 3109 3111 3114 3118 3120 3122 3124 3126 3131 3133 3137
+## [421] 3138 3139 3141 3143 3145 3147 3148 3150 3151 3165 3170 3171 3172 3176 3177
+## [436] 3180 3193 3223 3224 3231 3232 3234 3242 3274 3275 3280 3302 3305 3320 3323
+## [451] 3343 3346 3353 3362 3365 3367 3373 3404 3406 3414 3418 3346 3442 3496 3505
+## [466] 3511 3515 3521 3525 3526 3531 3533 3535 3539 3540 3543 3546 3547 3549 3552
+## [481] 3554 3555 3558 3571</code></pre>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">dim</span>(df_consensus_tax_occ)</span></code></pre></div>
+<pre><code>## [1] 995   7</code></pre>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">dim</span>(df_occ_now)</span></code></pre></div>
+<pre><code>## [1] 8038   88</code></pre>
+</div>
+<div id="backbone-taxonômica-now" class="section level2">
+<h2>Backbone taxonômica NOW</h2>
+<p>Aqui realizamos a mesma padronização mas sem os nomes dos autores,
+pois NOW não tem [Thais]</p>
+</div>
+</div>
+<div id="harmonizando-dados-de-ocorrência-para-a-taxonomia-usada"
+class="section level1">
+<h1>Harmonizando dados de ocorrência para a taxonomia usada</h1>
+<p>Primeiro vemos quais ocorrências apresentam nomes que batem com a
+backbone taxonomica utilizada, neste caso o pbdb</p>
+<p>Os dados de ocorrência utilizados são provenientes do NOW, então o
+que vamos fazer neste passo é padronizar os nomes das ocorrências de
+acordo com o a backbone do PBDB</p>
 <div id="limpeza-taxonômica" class="section level2">
 <h2>Limpeza taxonômica</h2>
 </div>
@@ -504,16 +590,16 @@ class="section level1">
 <h2>Harmonização</h2>
 <p>Os dados da backbone taxonomica foram baixados do pbdb, mas eles vem
 com colunas repetidas aqui limpamos essas colunas</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>back_tax <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;pbdb_taxa_250318_carnivora_namao.csv&quot;</span>), <span class="at">sep =</span> <span class="st">&quot;;&quot;</span>, <span class="at">skip =</span> <span class="dv">15</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co"># removendo colunas repetidas</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co"># df_back_cleaned &lt;- </span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#   back_tax  |&gt; </span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#   select(-matches(&quot;\\.&quot;))</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>back_tax <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;pbdb_taxa_250318_carnivora_namao.csv&quot;</span>), <span class="at">sep =</span> <span class="st">&quot;;&quot;</span>, <span class="at">skip =</span> <span class="dv">15</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co"># removendo colunas repetidas</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co"># df_back_cleaned &lt;- </span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#   back_tax  |&gt; </span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#   select(-matches(&quot;\\.&quot;))</span></span></code></pre></div>
 <p>Remover colunas desnecessárias para a backbone taxonômica</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>df_back_cleaned <span class="ot">&lt;-</span> </span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  back_tax <span class="sc">|&gt;</span> </span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="fu">select</span>(order, family, genus, taxon_name, taxon_attr, accepted_name, accepted_rank,  ref_author, ref_pubyr)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>df_back_cleaned <span class="ot">&lt;-</span> </span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>  back_tax <span class="sc">|&gt;</span> </span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="fu">select</span>(order, family, genus, taxon_name, taxon_attr, accepted_name, accepted_rank,  ref_author, ref_pubyr)</span></code></pre></div>
 <div id="obtenção-de-lista-de-autoridade-taxonômica"
 class="section level3">
 <h3>Obtenção de lista de autoridade taxonômica</h3>
@@ -524,7 +610,7 @@ class="section level3">
 </div>
 </div>
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIlBpcGVsaW5lIGxpbXBlemEgZGFkb3MiDQphdXRob3I6ICJHYWJyaWVsIE5ha2FtdXJhIg0KZGF0ZTogIjIwMjUtMDMtMTgiDQpvdXRwdXQ6IGh0bWxfZG9jdW1lbnQNCi0tLQ0KDQpgYGB7ciBzZXR1cCwgaW5jbHVkZT1GQUxTRX0NCmtuaXRyOjpvcHRzX2NodW5rJHNldChlY2hvID0gVFJVRSkNCmBgYA0KDQojIERvd25sb2FkIGUgbGltcGV6YSBpbmljaWFsIGRhcyB2YXJpw6F2ZWlzIGUgcGFjb3RlcyBuZWNlc3PDoXJpb3MNCg0KYGBge3J9DQpsaWJyYXJ5KGRwbHlyKQ0KbGlicmFyeShyZWFkcikNCmxpYnJhcnkoc3RyaW5ncikNCg0KYGBgDQoNCg0KIyBMaW1wZXphIHRheG9uw7RtaWNhIGUgaGFybW9uaXphw6fDo28gIA0KDQpEYWRvcyB1dGlsaXphZG9zIA0KDQotIFBCREI6IGJhY2tib25lIHRheG9uw7RtaWNvDQotIE5PVzogZGFkb3MgZGUgb2NvcnLDqm5jaWEgDQoNCg0KRGFkb3MgZGUgb2NvcnJlbmNpYSBOT1cNCmBgYHtyfQ0Kb2NjX25vdyA8LSByZWFkLmNzdihoZXJlOjpoZXJlKCJkYXRhIiwgIm5vd19kYXRhLmNzdiIpLCBzZXAgPSAiOyIpDQoNCm9jY19ub3cyIDwtIA0KICBvY2Nfbm93IHw+IA0KICBtdXRhdGUoZ2VudXNfc3BlY2llcyA9IHBhc3RlKEdFTlVTLCBTUEVDSUVTLCBzZXAgPSAiICIpKQ0KYGBgDQoNCg0KIyMgTGltcGV6YSB0YXhvbsO0bWljYSANCg0KIyMgSGFybW9uaXphw6fDo28gDQoNCk9zIGRhZG9zIGRhIGJhY2tib25lIHRheG9ub21pY2EgZm9yYW0gYmFpeGFkb3MgZG8gcGJkYiwgbWFzIGVsZXMgdmVtIGNvbSBjb2x1bmFzIHJlcGV0aWRhcw0KICAgIGFxdWkgbGltcGFtb3MgZXNzYXMgY29sdW5hcw0KICAgIA0KYGBge3J9DQpiYWNrX3RheCA8LSByZWFkLmNzdihoZXJlOjpoZXJlKCJkYXRhIiwgInBiZGJfdGF4YV8yNTAzMThfY2Fybml2b3JhX25hbWFvLmNzdiIpLCBzZXAgPSAiOyIsIHNraXAgPSAxNSkNCg0KIyByZW1vdmVuZG8gY29sdW5hcyByZXBldGlkYXMNCiMgZGZfYmFja19jbGVhbmVkIDwtIA0KIyAgIGJhY2tfdGF4ICB8PiANCiMgICBzZWxlY3QoLW1hdGNoZXMoIlxcLiIpKQ0KDQoNCmBgYA0KDQpSZW1vdmVyIGNvbHVuYXMgZGVzbmVjZXNzw6FyaWFzIHBhcmEgYSBiYWNrYm9uZSB0YXhvbsO0bWljYQ0KDQpgYGB7cn0NCmRmX2JhY2tfY2xlYW5lZCA8LSANCiAgYmFja190YXggfD4gDQogIHNlbGVjdChvcmRlciwgZmFtaWx5LCBnZW51cywgdGF4b25fbmFtZSwgdGF4b25fYXR0ciwgYWNjZXB0ZWRfbmFtZSwgYWNjZXB0ZWRfcmFuaywgIHJlZl9hdXRob3IsIHJlZl9wdWJ5cikNCmBgYA0KDQojIyMgT2J0ZW7Dp8OjbyBkZSBsaXN0YSBkZSBhdXRvcmlkYWRlIHRheG9uw7RtaWNhDQoNCiMjIyBQYWRyb25pemHDp8OjbyBkYSBsaXN0YQ0K</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIkhhcm1vbml6YW5kbyB0YXhvbm9taWEgZGUgb2NvcnLDqm5jaWFzIg0KYXV0aG9yOiAiR2FicmllbCBOYWthbXVyYSINCmRhdGU6ICIyMDI1LTAzLTE4Ig0Kb3V0cHV0OiBodG1sX2RvY3VtZW50DQotLS0NCg0KYGBge3Igc2V0dXAsIGluY2x1ZGU9RkFMU0V9DQprbml0cjo6b3B0c19jaHVuayRzZXQoZWNobyA9IFRSVUUpDQpgYGANCg0KIyBEb3dubG9hZCBlIGxpbXBlemEgaW5pY2lhbCBkYXMgdmFyacOhdmVpcyBlIHBhY290ZXMgbmVjZXNzw6FyaW9zDQoNCmBgYHtyfQ0KbGlicmFyeShkcGx5cikNCmxpYnJhcnkocmVhZHIpDQpsaWJyYXJ5KHN0cmluZ3IpDQoNCmBgYA0KIyBEYWRvcyBuZWNlc3PDoXJpb3MgcGFyYSBlc3NhIHJvdGluYQ0KDQotIEJhY2tib25lIHRheG9uw7RtaWNhIA0KDQotIERhZG9zIGRlIG9jb3Jyw6puY2lhIHF1ZSBjb250ZW5oYSwgbm8gbcOtbmltbywgbyBuw612ZWwgZGUgaWRlbnRpZmljYcOnw6NvIGRhIG9jb3Jyw6puY2lhDQoNCmBgYHtyfQ0KZGZfYmFja2JvbmVfcGJkYiA8LSANCiAgcmVhZC5jc3YoaGVyZTo6aGVyZSgiZGF0YSIsICJwcm9jZXNzZWQiLCAicGJkYl9iYWNrYm9uZV9jYXJuXzI1MDMwOC5jc3YiKSkNCmBgYA0KDQojIyBEYWRvcyBkZSBvY29ycmVuY2lhIE5PVw0KYGBge3J9DQpkZl9vY2Nfbm93IDwtIHJlYWQuY3N2KGhlcmU6OmhlcmUoImRhdGEiLCAibm93X2RhdGEuY3N2IiksIHNlcCA9ICI7IikNCg0KZGZfb2NjX25vdzIgPC0gDQogIGRmX29jY19ub3cgfD4gDQogIG11dGF0ZShnZW51c19zcGVjaWVzID0gcGFzdGUoR0VOVVMsIFNQRUNJRVMsIHNlcCA9ICJfIikpDQoNCmRmX29jY19ub3czIDwtIA0KICBkZl9vY2Nfbm93MiB8PiANCiAgc2VsZWN0KE9SREVSLCBGQU1JTFksIEdFTlVTLCBTUEVDSUVTLCBnZW51c19zcGVjaWVzLCBMQVQsIExPTkcpDQpgYGANCg0KDQojIFBhZHJvbml6YW5kbyBiYWNrYm9uZSB0YXhvbsO0bWljYQ0KDQojIyBiYWNrYm9uZSB0YXhvbsO0bWljYSBQQkRCDQoNCkFxdWkgcmVhbGl6YW1vcyB1bWEgcGFkcm9uaXphw6fDo28gZGUgbm9tZXMgZGUgYXV0b3Jlcy4uLltUaGFpc10NCg0KVXNhbmRvIGEgYmFja2JvbmUgasOhIHByb2Nlc3NhZGEgbm8gc2NyaXB0IMK0bW9kMl9wcm9jZXNzYW1lbnRvX2JhY2tib25lX3RheG9ub21pY28uUm1kwrQgDQoNCmBgYHtyfQ0KdmVjX3NwcF9jb25zZW5zdXMgPC0gDQogIG1hdGNoKGRmX2JhY2tib25lX3BiZGIkcGJkYl9hY2NlcHRlZF9uYW1lLCBkZl9vY2Nfbm93MyRnZW51c19zcGVjaWVzKVshaXMubmEobWF0Y2goZGZfYmFja2JvbmVfcGJkYiRwYmRiX2FjY2VwdGVkX25hbWUsIGRmX29jY19ub3czJGdlbnVzX3NwZWNpZXMpKV0NCg0KZGZfY29uc2Vuc3VzX3RheF9vY2MgPC0gDQogIGRmX29jY19ub3czW3ZlY19zcHBfY29uc2Vuc3VzLCBdDQoNCmRmX25vY29uc2Vuc3VzX3RheF9vY2MgPC0gDQogIGRmX29jY19ub3czWy12ZWNfc3BwX2NvbnNlbnN1cywgXQ0KDQp2ZWNfc3lub255bSA8LSANCiAgbWF0Y2goZGZfYmFja2JvbmVfcGJkYiRwYmRiX3RheG9uX25hbWUsIGRmX25vY29uc2Vuc3VzX3RheF9vY2MkZ2VudXNfc3BlY2llcylbIWlzLm5hKG1hdGNoKGRmX2JhY2tib25lX3BiZGIkcGJkYl90YXhvbl9uYW1lLCBkZl9ub2NvbnNlbnN1c190YXhfb2NjJGdlbnVzX3NwZWNpZXMpKV0NCg0KZGZfc3lub255bV90YXggPC0gZGZfbm9jb25zZW5zdXNfdGF4X29jY1t2ZWNfc3lub255bSwgXQ0KDQptYXRjaChkZl9zeW5vbnltX3RheCRnZW51c19zcGVjaWVzLCBkZl9iYWNrYm9uZV9wYmRiJHBiZGJfdGF4b25fbmFtZSkNCg0KZGltKGRmX2NvbnNlbnN1c190YXhfb2NjKQ0KZGltKGRmX29jY19ub3cpDQpgYGANCg0KIyMgQmFja2JvbmUgdGF4b27DtG1pY2EgTk9XDQoNCkFxdWkgcmVhbGl6YW1vcyBhIG1lc21hIHBhZHJvbml6YcOnw6NvIG1hcyBzZW0gb3Mgbm9tZXMgZG9zIGF1dG9yZXMsIHBvaXMgTk9XIG7Do28gdGVtDQogICBbVGhhaXNdDQoNCg0KIyBIYXJtb25pemFuZG8gZGFkb3MgZGUgb2NvcnLDqm5jaWEgcGFyYSBhIHRheG9ub21pYSB1c2FkYQ0KDQpQcmltZWlybyB2ZW1vcyBxdWFpcyBvY29ycsOqbmNpYXMgYXByZXNlbnRhbSBub21lcyBxdWUgYmF0ZW0gY29tIGEgYmFja2JvbmUgDQogICAgdGF4b25vbWljYSB1dGlsaXphZGEsIG5lc3RlIGNhc28gbyBwYmRiDQogICAgDQpPcyBkYWRvcyBkZSBvY29ycsOqbmNpYSB1dGlsaXphZG9zIHPDo28gcHJvdmVuaWVudGVzIGRvIE5PVywgZW50w6NvIG8gcXVlIHZhbW9zIGZhemVyDQogICAgbmVzdGUgcGFzc28gw6kgcGFkcm9uaXphciBvcyBub21lcyBkYXMgb2NvcnLDqm5jaWFzIGRlIGFjb3JkbyBjb20gbyBhIGJhY2tib25lDQogICAgZG8gUEJEQg0KDQojIyBMaW1wZXphIHRheG9uw7RtaWNhIA0KDQojIyBIYXJtb25pemHDp8OjbyANCg0KT3MgZGFkb3MgZGEgYmFja2JvbmUgdGF4b25vbWljYSBmb3JhbSBiYWl4YWRvcyBkbyBwYmRiLCBtYXMgZWxlcyB2ZW0gY29tIGNvbHVuYXMgcmVwZXRpZGFzDQogICAgYXF1aSBsaW1wYW1vcyBlc3NhcyBjb2x1bmFzDQogICAgDQpgYGB7cn0NCmJhY2tfdGF4IDwtIHJlYWQuY3N2KGhlcmU6OmhlcmUoImRhdGEiLCAicGJkYl90YXhhXzI1MDMxOF9jYXJuaXZvcmFfbmFtYW8uY3N2IiksIHNlcCA9ICI7Iiwgc2tpcCA9IDE1KQ0KDQojIHJlbW92ZW5kbyBjb2x1bmFzIHJlcGV0aWRhcw0KIyBkZl9iYWNrX2NsZWFuZWQgPC0gDQojICAgYmFja190YXggIHw+IA0KIyAgIHNlbGVjdCgtbWF0Y2hlcygiXFwuIikpDQoNCg0KYGBgDQoNClJlbW92ZXIgY29sdW5hcyBkZXNuZWNlc3PDoXJpYXMgcGFyYSBhIGJhY2tib25lIHRheG9uw7RtaWNhDQoNCmBgYHtyfQ0KZGZfYmFja19jbGVhbmVkIDwtIA0KICBiYWNrX3RheCB8PiANCiAgc2VsZWN0KG9yZGVyLCBmYW1pbHksIGdlbnVzLCB0YXhvbl9uYW1lLCB0YXhvbl9hdHRyLCBhY2NlcHRlZF9uYW1lLCBhY2NlcHRlZF9yYW5rLCAgcmVmX2F1dGhvciwgcmVmX3B1YnlyKQ0KYGBgDQoNCiMjIyBPYnRlbsOnw6NvIGRlIGxpc3RhIGRlIGF1dG9yaWRhZGUgdGF4b27DtG1pY2ENCg0KIyMjIFBhZHJvbml6YcOnw6NvIGRhIGxpc3RhDQo=</div>
 
 
 </div>

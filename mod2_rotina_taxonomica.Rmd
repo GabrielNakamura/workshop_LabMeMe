@@ -1,5 +1,5 @@
 ---
-title: "Pipeline limpeza dados"
+title: "Harmonizando taxonomia de ocorrências"
 author: "Gabriel Nakamura"
 date: "2025-03-18"
 output: html_document
@@ -17,25 +17,74 @@ library(readr)
 library(stringr)
 
 ```
+# Dados necessários para essa rotina
 
+- Backbone taxonômica 
 
-# Limpeza taxonômica e harmonização  
+- Dados de ocorrência que contenha, no mínimo, o nível de identificação da ocorrência
 
-Dados utilizados 
-
-- PBDB: backbone taxonômico
-- NOW: dados de ocorrência 
-
-
-Dados de ocorrencia NOW
 ```{r}
-occ_now <- read.csv(here::here("data", "now_data.csv"), sep = ";")
-
-occ_now2 <- 
-  occ_now |> 
-  mutate(genus_species = paste(GENUS, SPECIES, sep = " "))
+df_backbone_pbdb <- 
+  read.csv(here::here("data", "processed", "pbdb_backbone_carn_250308.csv"))
 ```
 
+## Dados de ocorrencia NOW
+```{r}
+df_occ_now <- read.csv(here::here("data", "now_data.csv"), sep = ";")
+
+df_occ_now2 <- 
+  df_occ_now |> 
+  mutate(genus_species = paste(GENUS, SPECIES, sep = "_"))
+
+df_occ_now3 <- 
+  df_occ_now2 |> 
+  select(ORDER, FAMILY, GENUS, SPECIES, genus_species, LAT, LONG)
+```
+
+
+# Padronizando backbone taxonômica
+
+## backbone taxonômica PBDB
+
+Aqui realizamos uma padronização de nomes de autores...[Thais]
+
+Usando a backbone já processada no script ´mod2_processamento_backbone_taxonomico.Rmd´ 
+
+```{r}
+vec_spp_consensus <- 
+  match(df_backbone_pbdb$pbdb_accepted_name, df_occ_now3$genus_species)[!is.na(match(df_backbone_pbdb$pbdb_accepted_name, df_occ_now3$genus_species))]
+
+df_consensus_tax_occ <- 
+  df_occ_now3[vec_spp_consensus, ]
+
+df_noconsensus_tax_occ <- 
+  df_occ_now3[-vec_spp_consensus, ]
+
+vec_synonym <- 
+  match(df_backbone_pbdb$pbdb_taxon_name, df_noconsensus_tax_occ$genus_species)[!is.na(match(df_backbone_pbdb$pbdb_taxon_name, df_noconsensus_tax_occ$genus_species))]
+
+df_synonym_tax <- df_noconsensus_tax_occ[vec_synonym, ]
+
+match(df_synonym_tax$genus_species, df_backbone_pbdb$pbdb_taxon_name)
+
+dim(df_consensus_tax_occ)
+dim(df_occ_now)
+```
+
+## Backbone taxonômica NOW
+
+Aqui realizamos a mesma padronização mas sem os nomes dos autores, pois NOW não tem
+   [Thais]
+
+
+# Harmonizando dados de ocorrência para a taxonomia usada
+
+Primeiro vemos quais ocorrências apresentam nomes que batem com a backbone 
+    taxonomica utilizada, neste caso o pbdb
+    
+Os dados de ocorrência utilizados são provenientes do NOW, então o que vamos fazer
+    neste passo é padronizar os nomes das ocorrências de acordo com o a backbone
+    do PBDB
 
 ## Limpeza taxonômica 
 

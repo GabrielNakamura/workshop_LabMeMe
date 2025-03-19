@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Thais" />
+
+<meta name="date" content="2025-03-19" />
+
+<title>Processamento do backbone taxonomico</title>
+
+<script src="site_libs/header-attrs-2.28/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<script src="site_libs/navigation-1.1/sourceembed.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  background-color: #f8f8f8; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ef2929; } /* Alert */
+code span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #204a87; } /* Attribute */
+code span.bn { color: #0000cf; } /* BaseN */
+code span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4e9a06; } /* Char */
+code span.cn { color: #8f5902; } /* Constant */
+code span.co { color: #8f5902; font-style: italic; } /* Comment */
+code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+code span.dt { color: #204a87; } /* DataType */
+code span.dv { color: #0000cf; } /* DecVal */
+code span.er { color: #a40000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #0000cf; } /* Float */
+code span.fu { color: #204a87; font-weight: bold; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+code span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+code span.ot { color: #8f5902; } /* Other */
+code span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+code span.sc { color: #ce5c00; font-weight: bold; } /* SpecialChar */
+code span.ss { color: #4e9a06; } /* SpecialString */
+code span.st { color: #4e9a06; } /* String */
+code span.va { color: #000000; } /* Variable */
+code span.vs { color: #4e9a06; } /* VerbatimString */
+code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+<style type="text/css">
+#rmd-source-code {
+  display: none;
+}
+</style>
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Workshop LabMeMe - processamento de dados a partir de registros fósseis</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Introdução</a>
+</li>
+<li>
+  <a href="mod1_download_processamento.html">Módulo 1 - download e processamento de dados de ocorrência</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Módulo 2 - harmonização taxonômica
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="mod2_processameto_backbone_taxonomico.html">Processamento backbone taxonomico</a>
+    </li>
+    <li>
+      <a href="rotina_taxonomica.html">Checagem taxonômica</a>
+    </li>
+    <li>
+      <a href="mod2_taxonomias.html">Harmonização com diferentes taxonomias</a>
+    </li>
+  </ul>
+</li>
+<li>
+  <a href="mod3_output.html">Módulo 3 - output de dados</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-download-source" href="#">Download Rmd</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Processamento do backbone taxonomico</h1>
+<h4 class="author">Thais</h4>
+<h4 class="date">2025-03-19</h4>
+
+</div>
+
+
+<div id="limpeza-e-padronização-da-backbone-taxonômica"
+class="section level1">
+<h1>Limpeza e padronização da backbone taxonômica</h1>
+<p>Aqui fazemos um processamento da backbone taxonômica para facilitar a
+harmonização dos nomes das ocorrências de acordo com a autoridade
+taxonômica usada</p>
+<div id="backbone-pbdb" class="section level2">
+<h2>Backbone PBDB</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Carregando pacotes</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(groundhog)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>groundhog.day <span class="ot">&lt;-</span> <span class="st">&quot;2025-03-01&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>groundhog.packages <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;here&quot;</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>                        <span class="st">&quot;readr&quot;</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>                        <span class="st">&quot;tidyr&quot;</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>                        <span class="st">&quot;dplyr&quot;</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>                        <span class="st">&quot;stringr&quot;</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>                        <span class="st">&quot;forcats&quot;</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>                        <span class="st">&quot;tidylog&quot;</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="fu">library</span>(forcats)</span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="fu">library</span>(tidylog)</span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a><span class="fu">groundhog.library</span>(groundhog.packages, </span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a>                  groundhog.day)</span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a><span class="fu">rm</span>(groundhog.day,</span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a>   groundhog.packages)</span>
+<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a><span class="co"># Limpeza inicial</span></span>
+<span id="cb1-26"><a href="#cb1-26" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" tabindex="-1"></a>pbdb_250308_carn_raw_dtf <span class="ot">&lt;-</span> </span>
+<span id="cb1-28"><a href="#cb1-28" tabindex="-1"></a>  <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, </span>
+<span id="cb1-29"><a href="#cb1-29" tabindex="-1"></a>                      <span class="st">&quot;pbdb_taxa_250318_carnivora_namao.csv&quot;</span>), <span class="at">skip =</span> <span class="dv">15</span>, <span class="at">sep =</span> <span class="st">&quot;;&quot;</span>)</span>
+<span id="cb1-30"><a href="#cb1-30" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" tabindex="-1"></a>pbdb_colnames_vct <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;pbdb_original_id&quot;</span> <span class="ot">=</span> <span class="st">&quot;orig_no&quot;</span>,</span>
+<span id="cb1-32"><a href="#cb1-32" tabindex="-1"></a>                       <span class="st">&quot;pbdb_taxon_id&quot;</span> <span class="ot">=</span> <span class="st">&quot;taxon_no&quot;</span>,</span>
+<span id="cb1-33"><a href="#cb1-33" tabindex="-1"></a>                       <span class="st">&quot;pbdb_taxon_status_record_type&quot;</span> <span class="ot">=</span> <span class="st">&quot;record_type&quot;</span>,</span>
+<span id="cb1-34"><a href="#cb1-34" tabindex="-1"></a>                       <span class="st">&quot;pbdb_taxon_status_flagged&quot;</span> <span class="ot">=</span> <span class="st">&quot;flags&quot;</span>,</span>
+<span id="cb1-35"><a href="#cb1-35" tabindex="-1"></a>                       <span class="st">&quot;pbdb_taxon_rank&quot;</span> <span class="ot">=</span> <span class="st">&quot;taxon_rank&quot;</span>,</span>
+<span id="cb1-36"><a href="#cb1-36" tabindex="-1"></a>                       <span class="st">&quot;pbdb_taxon_name&quot;</span> <span class="ot">=</span> <span class="st">&quot;taxon_name&quot;</span>,</span>
+<span id="cb1-37"><a href="#cb1-37" tabindex="-1"></a>                       <span class="st">&quot;pbdb_taxon_authority&quot;</span> <span class="ot">=</span> <span class="st">&quot;taxon_attr&quot;</span>,</span>
+<span id="cb1-38"><a href="#cb1-38" tabindex="-1"></a>                       <span class="st">&quot;pbdb_common_name&quot;</span> <span class="ot">=</span> <span class="st">&quot;common_name&quot;</span>,</span>
+<span id="cb1-39"><a href="#cb1-39" tabindex="-1"></a>                       <span class="st">&quot;pbdb_status_difference&quot;</span> <span class="ot">=</span> <span class="st">&quot;difference&quot;</span>,</span>
+<span id="cb1-40"><a href="#cb1-40" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_id&quot;</span> <span class="ot">=</span> <span class="st">&quot;accepted_no&quot;</span>,</span>
+<span id="cb1-41"><a href="#cb1-41" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_rank&quot;</span> <span class="ot">=</span> <span class="st">&quot;accepted_rank&quot;</span>,</span>
+<span id="cb1-42"><a href="#cb1-42" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_name&quot;</span> <span class="ot">=</span> <span class="st">&quot;accepted_name&quot;</span>,</span>
+<span id="cb1-43"><a href="#cb1-43" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_parent_id&quot;</span> <span class="ot">=</span> <span class="st">&quot;parent_no&quot;</span>,</span>
+<span id="cb1-44"><a href="#cb1-44" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_parent_name&quot;</span> <span class="ot">=</span> <span class="st">&quot;parent_name&quot;</span>,</span>
+<span id="cb1-45"><a href="#cb1-45" tabindex="-1"></a>                       <span class="co">#&quot;pbdb_accepted_immediate_parent_id&quot; = &quot;immpar_no&quot;,</span></span>
+<span id="cb1-46"><a href="#cb1-46" tabindex="-1"></a>                       <span class="co">#&quot;pbdb_accepted_immediate_parent_name&quot; = &quot;immpar_name&quot;,</span></span>
+<span id="cb1-47"><a href="#cb1-47" tabindex="-1"></a>                       <span class="st">&quot;pbdb_reference_id&quot;</span> <span class="ot">=</span> <span class="st">&quot;reference_no&quot;</span>,</span>
+<span id="cb1-48"><a href="#cb1-48" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_status_extinct&quot;</span> <span class="ot">=</span> <span class="st">&quot;is_extant&quot;</span>,</span>
+<span id="cb1-49"><a href="#cb1-49" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_count_occurences&quot;</span> <span class="ot">=</span> <span class="st">&quot;n_occs&quot;</span>,</span>
+<span id="cb1-50"><a href="#cb1-50" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_info_firstapp_max_ma&quot;</span> <span class="ot">=</span> <span class="st">&quot;firstapp_max_ma&quot;</span>,</span>
+<span id="cb1-51"><a href="#cb1-51" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_info_firstapp_min_ma&quot;</span> <span class="ot">=</span> <span class="st">&quot;firstapp_min_ma&quot;</span>,</span>
+<span id="cb1-52"><a href="#cb1-52" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_info_lastapp_max_ma&quot;</span> <span class="ot">=</span> <span class="st">&quot;lastapp_max_ma&quot;</span>,</span>
+<span id="cb1-53"><a href="#cb1-53" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_info_lastapp_min_ma&quot;</span> <span class="ot">=</span> <span class="st">&quot;lastapp_min_ma&quot;</span>,</span>
+<span id="cb1-54"><a href="#cb1-54" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_info_early_interval&quot;</span> <span class="ot">=</span> <span class="st">&quot;early_interval&quot;</span>,</span>
+<span id="cb1-55"><a href="#cb1-55" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_info_late_interval&quot;</span> <span class="ot">=</span> <span class="st">&quot;late_interval&quot;</span>,</span>
+<span id="cb1-56"><a href="#cb1-56" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_info_taxonsize&quot;</span> <span class="ot">=</span> <span class="st">&quot;taxon_size&quot;</span>,</span>
+<span id="cb1-57"><a href="#cb1-57" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_info_extansize&quot;</span> <span class="ot">=</span> <span class="st">&quot;extant_size&quot;</span>,</span>
+<span id="cb1-58"><a href="#cb1-58" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_sist_phylum_name&quot;</span> <span class="ot">=</span> <span class="st">&quot;phylum&quot;</span>,</span>
+<span id="cb1-59"><a href="#cb1-59" tabindex="-1"></a>                       <span class="co">#&quot;pbdb_accepted_sist_phylum_id&quot; = &quot;phylum_no&quot;,</span></span>
+<span id="cb1-60"><a href="#cb1-60" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_sist_class_name&quot;</span> <span class="ot">=</span> <span class="st">&quot;class&quot;</span>,</span>
+<span id="cb1-61"><a href="#cb1-61" tabindex="-1"></a>                       <span class="co">#&quot;pbdb_accepted_sist_class_id&quot; = &quot;class_no&quot;,</span></span>
+<span id="cb1-62"><a href="#cb1-62" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_sist_order_name&quot;</span> <span class="ot">=</span> <span class="st">&quot;order&quot;</span>,</span>
+<span id="cb1-63"><a href="#cb1-63" tabindex="-1"></a>                       <span class="co">#&quot;pbdb_accepted_sist_order_id&quot; = &quot;order_no&quot;,</span></span>
+<span id="cb1-64"><a href="#cb1-64" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_sist_family_name&quot;</span> <span class="ot">=</span> <span class="st">&quot;family&quot;</span>,</span>
+<span id="cb1-65"><a href="#cb1-65" tabindex="-1"></a>                       <span class="co">#&quot;pbdb_accepted_sist_family_id&quot; = &quot;family_no&quot;,</span></span>
+<span id="cb1-66"><a href="#cb1-66" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_sist_genus_name&quot;</span> <span class="ot">=</span> <span class="st">&quot;genus&quot;</span>,</span>
+<span id="cb1-67"><a href="#cb1-67" tabindex="-1"></a>                       <span class="co">#&quot;pbdb_accepted_sist_genus_id&quot; = &quot;genus_no&quot;,</span></span>
+<span id="cb1-68"><a href="#cb1-68" tabindex="-1"></a>                       <span class="co">#&quot;pbdb_accepted_sist_subgenus_id&quot; = &quot;subgenus_no&quot;,</span></span>
+<span id="cb1-69"><a href="#cb1-69" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_sist_type_name&quot;</span> <span class="ot">=</span> <span class="st">&quot;type_taxon&quot;</span>,</span>
+<span id="cb1-70"><a href="#cb1-70" tabindex="-1"></a>                       <span class="co">#&quot;pbdb_accepted_sist_type_id&quot; = &quot;type_taxon_no&quot;,</span></span>
+<span id="cb1-71"><a href="#cb1-71" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_count_orders&quot;</span> <span class="ot">=</span> <span class="st">&quot;n_orders&quot;</span>,</span>
+<span id="cb1-72"><a href="#cb1-72" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_count_families&quot;</span> <span class="ot">=</span> <span class="st">&quot;n_families&quot;</span>,</span>
+<span id="cb1-73"><a href="#cb1-73" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_count_genera&quot;</span> <span class="ot">=</span> <span class="st">&quot;n_genera&quot;</span>,</span>
+<span id="cb1-74"><a href="#cb1-74" tabindex="-1"></a>                       <span class="st">&quot;pbdb_accepted_count_species&quot;</span> <span class="ot">=</span> <span class="st">&quot;n_species&quot;</span>)</span>
+<span id="cb1-75"><a href="#cb1-75" tabindex="-1"></a></span>
+<span id="cb1-76"><a href="#cb1-76" tabindex="-1"></a>info_typo_fix_vct <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Cusafont&quot;</span> <span class="ot">=</span> <span class="st">&quot;Crusafont&quot;</span>,</span>
+<span id="cb1-77"><a href="#cb1-77" tabindex="-1"></a>                       <span class="st">&quot;Geoffroy-Saint-Hillaire&quot;</span> <span class="ot">=</span> <span class="st">&quot;Geoffroy-Saint-Hilaire&quot;</span>,</span>
+<span id="cb1-78"><a href="#cb1-78" tabindex="-1"></a>                       <span class="st">&quot;Pockock&quot;</span> <span class="ot">=</span> <span class="st">&quot;Pocock&quot;</span>,</span>
+<span id="cb1-79"><a href="#cb1-79" tabindex="-1"></a>                       <span class="st">&quot;Rossenbüller&quot;</span> <span class="ot">=</span> <span class="st">&quot;Rosenmüller&quot;</span>,</span>
+<span id="cb1-80"><a href="#cb1-80" tabindex="-1"></a>                       <span class="st">&quot;Solunias&quot;</span> <span class="ot">=</span> <span class="st">&quot;Solounias&quot;</span>, <span class="co">#https://sjpp.springeropen.com/articles/10.1007/s13358-012-0042-y</span></span>
+<span id="cb1-81"><a href="#cb1-81" tabindex="-1"></a>                       <span class="st">&quot;Zimmerman &quot;</span> <span class="ot">=</span> <span class="st">&quot;Zimmermann &quot;</span>,</span>
+<span id="cb1-82"><a href="#cb1-82" tabindex="-1"></a>                       <span class="st">&quot;Kretsoi&quot;</span> <span class="ot">=</span> <span class="st">&quot;Kretzoi&quot;</span>) </span>
+<span id="cb1-83"><a href="#cb1-83" tabindex="-1"></a></span>
+<span id="cb1-84"><a href="#cb1-84" tabindex="-1"></a>pbdb_250308_carn_raw_dtf <span class="ot">&lt;-</span> pbdb_250308_carn_raw_dtf <span class="sc">%&gt;%</span></span>
+<span id="cb1-85"><a href="#cb1-85" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="fu">all_of</span>(pbdb_colnames_vct)) <span class="sc">%&gt;%</span></span>
+<span id="cb1-86"><a href="#cb1-86" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.character), </span>
+<span id="cb1-87"><a href="#cb1-87" tabindex="-1"></a>                <span class="sc">~</span><span class="fu">str_replace_all</span>(., info_typo_fix_vct)))</span>
+<span id="cb1-88"><a href="#cb1-88" tabindex="-1"></a></span>
+<span id="cb1-89"><a href="#cb1-89" tabindex="-1"></a>accepted_taxa_attr <span class="ot">&lt;-</span> pbdb_250308_carn_raw_dtf <span class="sc">%&gt;%</span></span>
+<span id="cb1-90"><a href="#cb1-90" tabindex="-1"></a>  <span class="fu">select</span>(pbdb_taxon_name,</span>
+<span id="cb1-91"><a href="#cb1-91" tabindex="-1"></a>         pbdb_accepted_name,</span>
+<span id="cb1-92"><a href="#cb1-92" tabindex="-1"></a>         pbdb_taxon_authority,</span>
+<span id="cb1-93"><a href="#cb1-93" tabindex="-1"></a>         pbdb_taxon_id,</span>
+<span id="cb1-94"><a href="#cb1-94" tabindex="-1"></a>         pbdb_accepted_id</span>
+<span id="cb1-95"><a href="#cb1-95" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb1-96"><a href="#cb1-96" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pbdb_taxon_authority_copy =</span> pbdb_taxon_authority) <span class="sc">%&gt;%</span></span>
+<span id="cb1-97"><a href="#cb1-97" tabindex="-1"></a>  <span class="fu">filter</span>(pbdb_accepted_name <span class="sc">==</span> pbdb_taxon_name) <span class="sc">%&gt;%</span></span>
+<span id="cb1-98"><a href="#cb1-98" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">pbdb_accepted_authority =</span> pbdb_taxon_authority_copy) <span class="sc">%&gt;%</span></span>
+<span id="cb1-99"><a href="#cb1-99" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb1-100"><a href="#cb1-100" tabindex="-1"></a>    <span class="at">pbdb_accepted_authority_parentheses =</span> <span class="fu">case_when</span>(</span>
+<span id="cb1-101"><a href="#cb1-101" tabindex="-1"></a>      <span class="fu">str_detect</span>(pbdb_accepted_authority,</span>
+<span id="cb1-102"><a href="#cb1-102" tabindex="-1"></a>                 <span class="at">pattern =</span> <span class="st">&quot;</span><span class="sc">\\</span><span class="st">(&quot;</span></span>
+<span id="cb1-103"><a href="#cb1-103" tabindex="-1"></a>      ) <span class="sc">~</span> <span class="st">&quot;yes&quot;</span>,</span>
+<span id="cb1-104"><a href="#cb1-104" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">str_detect</span>(pbdb_accepted_authority,</span>
+<span id="cb1-105"><a href="#cb1-105" tabindex="-1"></a>                  <span class="at">pattern =</span> <span class="st">&quot;</span><span class="sc">\\</span><span class="st">(&quot;</span></span>
+<span id="cb1-106"><a href="#cb1-106" tabindex="-1"></a>      ) <span class="sc">~</span> <span class="st">&quot;no&quot;</span></span>
+<span id="cb1-107"><a href="#cb1-107" tabindex="-1"></a>    ),</span>
+<span id="cb1-108"><a href="#cb1-108" tabindex="-1"></a>    <span class="at">pbdb_accepted_authority_parentheses =</span> <span class="fu">as.factor</span>(pbdb_accepted_authority_parentheses),</span>
+<span id="cb1-109"><a href="#cb1-109" tabindex="-1"></a>    <span class="at">accepted_copy =</span> pbdb_accepted_authority,</span>
+<span id="cb1-110"><a href="#cb1-110" tabindex="-1"></a>    <span class="at">accepted_copy =</span> <span class="fu">str_replace_all</span>(accepted_copy,</span>
+<span id="cb1-111"><a href="#cb1-111" tabindex="-1"></a>                                    <span class="at">pattern =</span> <span class="st">&quot;</span><span class="sc">\\</span><span class="st">(|</span><span class="sc">\\</span><span class="st">)|,|</span><span class="sc">\\</span><span class="st">.&quot;</span>,</span>
+<span id="cb1-112"><a href="#cb1-112" tabindex="-1"></a>                                    <span class="at">replacement =</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb1-113"><a href="#cb1-113" tabindex="-1"></a>    ),</span>
+<span id="cb1-114"><a href="#cb1-114" tabindex="-1"></a>    <span class="at">accepted_copy =</span> <span class="fu">str_replace_all</span>(accepted_copy,</span>
+<span id="cb1-115"><a href="#cb1-115" tabindex="-1"></a>                                    <span class="at">pattern =</span> <span class="st">&quot;  &quot;</span>,</span>
+<span id="cb1-116"><a href="#cb1-116" tabindex="-1"></a>                                    <span class="at">replacement =</span> <span class="st">&quot; &quot;</span></span>
+<span id="cb1-117"><a href="#cb1-117" tabindex="-1"></a>    )</span>
+<span id="cb1-118"><a href="#cb1-118" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb1-119"><a href="#cb1-119" tabindex="-1"></a>  <span class="fu">distinct</span>()</span>
+<span id="cb1-120"><a href="#cb1-120" tabindex="-1"></a></span>
+<span id="cb1-121"><a href="#cb1-121" tabindex="-1"></a><span class="co">#Filtrando autoridades que tem ano e criando coluna de ano</span></span>
+<span id="cb1-122"><a href="#cb1-122" tabindex="-1"></a>accepted_taxa_attr_format <span class="ot">&lt;-</span> accepted_taxa_attr <span class="sc">%&gt;%</span> </span>
+<span id="cb1-123"><a href="#cb1-123" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(accepted_copy, </span>
+<span id="cb1-124"><a href="#cb1-124" tabindex="-1"></a>                    <span class="at">pattern =</span> <span class="st">&quot;[:digit:]&quot;</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-125"><a href="#cb1-125" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">accepted_copy =</span> stringi<span class="sc">::</span><span class="fu">stri_replace_last_fixed</span>(accepted_copy, </span>
+<span id="cb1-126"><a href="#cb1-126" tabindex="-1"></a>                                                          <span class="at">pattern =</span> <span class="st">&quot; &quot;</span>,</span>
+<span id="cb1-127"><a href="#cb1-127" tabindex="-1"></a>                                                          <span class="at">replacement =</span> <span class="st">&quot;~&quot;</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb1-128"><a href="#cb1-128" tabindex="-1"></a>  <span class="fu">separate</span>(accepted_copy, </span>
+<span id="cb1-129"><a href="#cb1-129" tabindex="-1"></a>           <span class="at">into =</span> <span class="fu">c</span>(<span class="st">&quot;pbdb_accepted_author_name_format&quot;</span>, </span>
+<span id="cb1-130"><a href="#cb1-130" tabindex="-1"></a>                    <span class="st">&quot;pbdb_accepted_author_year&quot;</span>), </span>
+<span id="cb1-131"><a href="#cb1-131" tabindex="-1"></a>           <span class="at">sep =</span> <span class="st">&quot;~&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb1-132"><a href="#cb1-132" tabindex="-1"></a>  </span>
+<span id="cb1-133"><a href="#cb1-133" tabindex="-1"></a>  <span class="fu">distinct</span>()</span>
+<span id="cb1-134"><a href="#cb1-134" tabindex="-1"></a></span>
+<span id="cb1-135"><a href="#cb1-135" tabindex="-1"></a><span class="co">#Juntando com autoridades sem ano e formatando nomes dos autores</span></span>
+<span id="cb1-136"><a href="#cb1-136" tabindex="-1"></a>accepted_taxa_attr_format <span class="ot">&lt;-</span> <span class="fu">full_join</span>(accepted_taxa_attr, accepted_taxa_attr_format) <span class="sc">%&gt;%</span></span>
+<span id="cb1-137"><a href="#cb1-137" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pbdb_accepted_author_name_format =</span> <span class="fu">case_when</span>(</span>
+<span id="cb1-138"><a href="#cb1-138" tabindex="-1"></a>    <span class="fu">is.na</span>(pbdb_accepted_author_name_format) <span class="sc">~</span> pbdb_accepted_authority,</span>
+<span id="cb1-139"><a href="#cb1-139" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> pbdb_accepted_author_name_format)) <span class="sc">%&gt;%</span></span>
+<span id="cb1-140"><a href="#cb1-140" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pbdb_accepted_author_name_format =</span> stringi<span class="sc">::</span> <span class="fu">stri_trans_general</span>(pbdb_accepted_author_name_format, <span class="st">&quot;Latin-ASCII&quot;</span>),</span>
+<span id="cb1-141"><a href="#cb1-141" tabindex="-1"></a>         <span class="at">pbdb_accepted_author_name_format =</span> <span class="fu">toupper</span>(pbdb_accepted_author_name_format),</span>
+<span id="cb1-142"><a href="#cb1-142" tabindex="-1"></a>         <span class="at">pbdb_accepted_author_name_format =</span> <span class="fu">str_replace_all</span>(pbdb_accepted_author_name_format,</span>
+<span id="cb1-143"><a href="#cb1-143" tabindex="-1"></a>                                                            <span class="at">pattern =</span> <span class="st">&quot; ET AL&quot;</span>,</span>
+<span id="cb1-144"><a href="#cb1-144" tabindex="-1"></a>                                                            <span class="at">replacement =</span> <span class="st">&quot;_ET-AL&quot;</span>),</span>
+<span id="cb1-145"><a href="#cb1-145" tabindex="-1"></a>         <span class="at">pbdb_accepted_author_name_format =</span> <span class="fu">str_replace_all</span>(pbdb_accepted_author_name_format,</span>
+<span id="cb1-146"><a href="#cb1-146" tabindex="-1"></a>                                                            <span class="at">pattern =</span> <span class="st">&quot; AND &quot;</span>,</span>
+<span id="cb1-147"><a href="#cb1-147" tabindex="-1"></a>                                                            <span class="at">replacement =</span> <span class="st">&quot;_&quot;</span>),</span>
+<span id="cb1-148"><a href="#cb1-148" tabindex="-1"></a>         <span class="at">pbdb_accepted_author_name_format =</span> <span class="fu">str_replace_all</span>(pbdb_accepted_author_name_format,</span>
+<span id="cb1-149"><a href="#cb1-149" tabindex="-1"></a>                                                            <span class="at">pattern =</span> <span class="st">&quot; AND_&quot;</span>,</span>
+<span id="cb1-150"><a href="#cb1-150" tabindex="-1"></a>                                                            <span class="at">replacement =</span> <span class="st">&quot;_&quot;</span>),</span>
+<span id="cb1-151"><a href="#cb1-151" tabindex="-1"></a>         <span class="at">pbdb_accepted_author_name_format =</span> <span class="fu">str_replace_all</span>(pbdb_accepted_author_name_format,</span>
+<span id="cb1-152"><a href="#cb1-152" tabindex="-1"></a>                                                            <span class="at">pattern =</span> <span class="st">&quot; &quot;</span>,</span>
+<span id="cb1-153"><a href="#cb1-153" tabindex="-1"></a>                                                            <span class="at">replacement =</span> <span class="st">&quot;-&quot;</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb1-154"><a href="#cb1-154" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>accepted_copy,</span>
+<span id="cb1-155"><a href="#cb1-155" tabindex="-1"></a>         <span class="sc">-</span>pbdb_taxon_name,</span>
+<span id="cb1-156"><a href="#cb1-156" tabindex="-1"></a>         <span class="sc">-</span>pbdb_taxon_id,</span>
+<span id="cb1-157"><a href="#cb1-157" tabindex="-1"></a>         <span class="sc">-</span>pbdb_taxon_authority) <span class="sc">%&gt;%</span></span>
+<span id="cb1-158"><a href="#cb1-158" tabindex="-1"></a>  <span class="fu">distinct</span>()</span>
+<span id="cb1-159"><a href="#cb1-159" tabindex="-1"></a></span>
+<span id="cb1-160"><a href="#cb1-160" tabindex="-1"></a><span class="co">#Juntando com resto da tabela, formantando nomes de taxa e família</span></span>
+<span id="cb1-161"><a href="#cb1-161" tabindex="-1"></a>pbdb_250308_carn_raw_dtf <span class="ot">&lt;-</span> pbdb_250308_carn_raw_dtf <span class="sc">%&gt;%</span></span>
+<span id="cb1-162"><a href="#cb1-162" tabindex="-1"></a>  <span class="fu">full_join</span>(., accepted_taxa_attr_format) <span class="sc">%&gt;%</span></span>
+<span id="cb1-163"><a href="#cb1-163" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pbdb_accepted_name =</span> <span class="fu">str_replace_all</span>(pbdb_accepted_name, </span>
+<span id="cb1-164"><a href="#cb1-164" tabindex="-1"></a>                                              <span class="at">pattern =</span> <span class="st">&quot; &quot;</span>, </span>
+<span id="cb1-165"><a href="#cb1-165" tabindex="-1"></a>                                              <span class="at">replacement =</span> <span class="st">&quot;_&quot;</span>),</span>
+<span id="cb1-166"><a href="#cb1-166" tabindex="-1"></a>         <span class="at">pbdb_taxon_name =</span> <span class="fu">str_replace_all</span>(pbdb_taxon_name, </span>
+<span id="cb1-167"><a href="#cb1-167" tabindex="-1"></a>                                           <span class="at">pattern =</span> <span class="st">&quot; &quot;</span>, </span>
+<span id="cb1-168"><a href="#cb1-168" tabindex="-1"></a>                                           <span class="at">replacement =</span> <span class="st">&quot;_&quot;</span>),</span>
+<span id="cb1-169"><a href="#cb1-169" tabindex="-1"></a>         <span class="at">pbdb_accepted_sist_family_name =</span> <span class="fu">toupper</span>(pbdb_accepted_sist_family_name)) <span class="sc">%&gt;%</span></span>
+<span id="cb1-170"><a href="#cb1-170" tabindex="-1"></a>  <span class="fu">distinct</span>()</span>
+<span id="cb1-171"><a href="#cb1-171" tabindex="-1"></a></span>
+<span id="cb1-172"><a href="#cb1-172" tabindex="-1"></a>pbdb_backbone_carn_250308 <span class="ot">&lt;-</span> pbdb_250308_carn_raw_dtf <span class="sc">%&gt;%</span></span>
+<span id="cb1-173"><a href="#cb1-173" tabindex="-1"></a>  <span class="fu">select</span>(pbdb_taxon_name,</span>
+<span id="cb1-174"><a href="#cb1-174" tabindex="-1"></a>         pbdb_taxon_authority,</span>
+<span id="cb1-175"><a href="#cb1-175" tabindex="-1"></a>         pbdb_accepted_name,</span>
+<span id="cb1-176"><a href="#cb1-176" tabindex="-1"></a>         pbdb_accepted_rank,</span>
+<span id="cb1-177"><a href="#cb1-177" tabindex="-1"></a>         pbdb_accepted_authority,</span>
+<span id="cb1-178"><a href="#cb1-178" tabindex="-1"></a>         pbdb_accepted_author_name_format,</span>
+<span id="cb1-179"><a href="#cb1-179" tabindex="-1"></a>         pbdb_accepted_author_year,</span>
+<span id="cb1-180"><a href="#cb1-180" tabindex="-1"></a>         pbdb_accepted_author_year,</span>
+<span id="cb1-181"><a href="#cb1-181" tabindex="-1"></a>         pbdb_accepted_authority_parentheses)</span>
+<span id="cb1-182"><a href="#cb1-182" tabindex="-1"></a></span>
+<span id="cb1-183"><a href="#cb1-183" tabindex="-1"></a><span class="fu">write.csv</span>(pbdb_backbone_carn_250308,</span>
+<span id="cb1-184"><a href="#cb1-184" tabindex="-1"></a>          <span class="at">file =</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>,</span>
+<span id="cb1-185"><a href="#cb1-185" tabindex="-1"></a>                      <span class="st">&quot;processed&quot;</span>,</span>
+<span id="cb1-186"><a href="#cb1-186" tabindex="-1"></a>                      <span class="st">&quot;pbdb_backbone_carn_250308.csv&quot;</span>))</span></code></pre></div>
+</div>
+</div>
+
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIlByb2Nlc3NhbWVudG8gZG8gYmFja2JvbmUgdGF4b25vbWljbyINCmF1dGhvcjogIlRoYWlzIg0KZGF0ZTogIjIwMjUtMDMtMTkiDQpvdXRwdXQ6IGh0bWxfZG9jdW1lbnQNCi0tLQ0KDQpgYGB7ciBzZXR1cCwgaW5jbHVkZT1GQUxTRX0NCmtuaXRyOjpvcHRzX2NodW5rJHNldChlY2hvID0gVFJVRSkNCmBgYA0KDQojIExpbXBlemEgZSBwYWRyb25pemHDp8OjbyBkYSBiYWNrYm9uZSB0YXhvbsO0bWljYQ0KDQpBcXVpIGZhemVtb3MgdW0gcHJvY2Vzc2FtZW50byBkYSBiYWNrYm9uZSB0YXhvbsO0bWljYSBwYXJhIGZhY2lsaXRhciBhIA0KICAgIGhhcm1vbml6YcOnw6NvIGRvcyBub21lcyBkYXMgb2NvcnLDqm5jaWFzIGRlIGFjb3JkbyBjb20gYSBhdXRvcmlkYWRlIHRheG9uw7RtaWNhIHVzYWRhDQogICAgDQojIyBCYWNrYm9uZSBQQkRCDQoNCg0KYGBge3IsIGV2YWw9RkFMU0V9DQojIENhcnJlZ2FuZG8gcGFjb3Rlcw0KDQpsaWJyYXJ5KGdyb3VuZGhvZykNCmdyb3VuZGhvZy5kYXkgPC0gIjIwMjUtMDMtMDEiDQpncm91bmRob2cucGFja2FnZXMgPC0gYygiaGVyZSIsDQogICAgICAgICAgICAgICAgICAgICAgICAicmVhZHIiLA0KICAgICAgICAgICAgICAgICAgICAgICAgInRpZHlyIiwNCiAgICAgICAgICAgICAgICAgICAgICAgICJkcGx5ciIsDQogICAgICAgICAgICAgICAgICAgICAgICAic3RyaW5nciIsDQogICAgICAgICAgICAgICAgICAgICAgICAiZm9yY2F0cyIsDQogICAgICAgICAgICAgICAgICAgICAgICAidGlkeWxvZyIpDQpsaWJyYXJ5KGRwbHlyKQ0KbGlicmFyeShyZWFkcikNCmxpYnJhcnkodGlkeXIpDQpsaWJyYXJ5KHN0cmluZ3IpDQpsaWJyYXJ5KGZvcmNhdHMpDQpsaWJyYXJ5KHRpZHlsb2cpDQoNCg0KZ3JvdW5kaG9nLmxpYnJhcnkoZ3JvdW5kaG9nLnBhY2thZ2VzLCANCiAgICAgICAgICAgICAgICAgIGdyb3VuZGhvZy5kYXkpDQpybShncm91bmRob2cuZGF5LA0KICAgZ3JvdW5kaG9nLnBhY2thZ2VzKQ0KDQojIExpbXBlemEgaW5pY2lhbA0KDQpwYmRiXzI1MDMwOF9jYXJuX3Jhd19kdGYgPC0gDQogIHJlYWQuY3N2KGhlcmU6OmhlcmUoImRhdGEiLCANCiAgICAgICAgICAgICAgICAgICAgICAicGJkYl90YXhhXzI1MDMxOF9jYXJuaXZvcmFfbmFtYW8uY3N2IiksIHNraXAgPSAxNSwgc2VwID0gIjsiKQ0KDQpwYmRiX2NvbG5hbWVzX3ZjdCA8LSBjKCJwYmRiX29yaWdpbmFsX2lkIiA9ICJvcmlnX25vIiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfdGF4b25faWQiID0gInRheG9uX25vIiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfdGF4b25fc3RhdHVzX3JlY29yZF90eXBlIiA9ICJyZWNvcmRfdHlwZSIsDQogICAgICAgICAgICAgICAgICAgICAgICJwYmRiX3RheG9uX3N0YXR1c19mbGFnZ2VkIiA9ICJmbGFncyIsDQogICAgICAgICAgICAgICAgICAgICAgICJwYmRiX3RheG9uX3JhbmsiID0gInRheG9uX3JhbmsiLA0KICAgICAgICAgICAgICAgICAgICAgICAicGJkYl90YXhvbl9uYW1lIiA9ICJ0YXhvbl9uYW1lIiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfdGF4b25fYXV0aG9yaXR5IiA9ICJ0YXhvbl9hdHRyIiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfY29tbW9uX25hbWUiID0gImNvbW1vbl9uYW1lIiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfc3RhdHVzX2RpZmZlcmVuY2UiID0gImRpZmZlcmVuY2UiLA0KICAgICAgICAgICAgICAgICAgICAgICAicGJkYl9hY2NlcHRlZF9pZCIgPSAiYWNjZXB0ZWRfbm8iLA0KICAgICAgICAgICAgICAgICAgICAgICAicGJkYl9hY2NlcHRlZF9yYW5rIiA9ICJhY2NlcHRlZF9yYW5rIiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfYWNjZXB0ZWRfbmFtZSIgPSAiYWNjZXB0ZWRfbmFtZSIsDQogICAgICAgICAgICAgICAgICAgICAgICJwYmRiX2FjY2VwdGVkX3BhcmVudF9pZCIgPSAicGFyZW50X25vIiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfYWNjZXB0ZWRfcGFyZW50X25hbWUiID0gInBhcmVudF9uYW1lIiwNCiAgICAgICAgICAgICAgICAgICAgICAgIyJwYmRiX2FjY2VwdGVkX2ltbWVkaWF0ZV9wYXJlbnRfaWQiID0gImltbXBhcl9ubyIsDQogICAgICAgICAgICAgICAgICAgICAgICMicGJkYl9hY2NlcHRlZF9pbW1lZGlhdGVfcGFyZW50X25hbWUiID0gImltbXBhcl9uYW1lIiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfcmVmZXJlbmNlX2lkIiA9ICJyZWZlcmVuY2Vfbm8iLA0KICAgICAgICAgICAgICAgICAgICAgICAicGJkYl9hY2NlcHRlZF9zdGF0dXNfZXh0aW5jdCIgPSAiaXNfZXh0YW50IiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfYWNjZXB0ZWRfY291bnRfb2NjdXJlbmNlcyIgPSAibl9vY2NzIiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfYWNjZXB0ZWRfaW5mb19maXJzdGFwcF9tYXhfbWEiID0gImZpcnN0YXBwX21heF9tYSIsDQogICAgICAgICAgICAgICAgICAgICAgICJwYmRiX2FjY2VwdGVkX2luZm9fZmlyc3RhcHBfbWluX21hIiA9ICJmaXJzdGFwcF9taW5fbWEiLA0KICAgICAgICAgICAgICAgICAgICAgICAicGJkYl9hY2NlcHRlZF9pbmZvX2xhc3RhcHBfbWF4X21hIiA9ICJsYXN0YXBwX21heF9tYSIsDQogICAgICAgICAgICAgICAgICAgICAgICJwYmRiX2FjY2VwdGVkX2luZm9fbGFzdGFwcF9taW5fbWEiID0gImxhc3RhcHBfbWluX21hIiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfYWNjZXB0ZWRfaW5mb19lYXJseV9pbnRlcnZhbCIgPSAiZWFybHlfaW50ZXJ2YWwiLA0KICAgICAgICAgICAgICAgICAgICAgICAicGJkYl9hY2NlcHRlZF9pbmZvX2xhdGVfaW50ZXJ2YWwiID0gImxhdGVfaW50ZXJ2YWwiLA0KICAgICAgICAgICAgICAgICAgICAgICAicGJkYl9hY2NlcHRlZF9pbmZvX3RheG9uc2l6ZSIgPSAidGF4b25fc2l6ZSIsDQogICAgICAgICAgICAgICAgICAgICAgICJwYmRiX2FjY2VwdGVkX2luZm9fZXh0YW5zaXplIiA9ICJleHRhbnRfc2l6ZSIsDQogICAgICAgICAgICAgICAgICAgICAgICJwYmRiX2FjY2VwdGVkX3Npc3RfcGh5bHVtX25hbWUiID0gInBoeWx1bSIsDQogICAgICAgICAgICAgICAgICAgICAgICMicGJkYl9hY2NlcHRlZF9zaXN0X3BoeWx1bV9pZCIgPSAicGh5bHVtX25vIiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfYWNjZXB0ZWRfc2lzdF9jbGFzc19uYW1lIiA9ICJjbGFzcyIsDQogICAgICAgICAgICAgICAgICAgICAgICMicGJkYl9hY2NlcHRlZF9zaXN0X2NsYXNzX2lkIiA9ICJjbGFzc19ubyIsDQogICAgICAgICAgICAgICAgICAgICAgICJwYmRiX2FjY2VwdGVkX3Npc3Rfb3JkZXJfbmFtZSIgPSAib3JkZXIiLA0KICAgICAgICAgICAgICAgICAgICAgICAjInBiZGJfYWNjZXB0ZWRfc2lzdF9vcmRlcl9pZCIgPSAib3JkZXJfbm8iLA0KICAgICAgICAgICAgICAgICAgICAgICAicGJkYl9hY2NlcHRlZF9zaXN0X2ZhbWlseV9uYW1lIiA9ICJmYW1pbHkiLA0KICAgICAgICAgICAgICAgICAgICAgICAjInBiZGJfYWNjZXB0ZWRfc2lzdF9mYW1pbHlfaWQiID0gImZhbWlseV9ubyIsDQogICAgICAgICAgICAgICAgICAgICAgICJwYmRiX2FjY2VwdGVkX3Npc3RfZ2VudXNfbmFtZSIgPSAiZ2VudXMiLA0KICAgICAgICAgICAgICAgICAgICAgICAjInBiZGJfYWNjZXB0ZWRfc2lzdF9nZW51c19pZCIgPSAiZ2VudXNfbm8iLA0KICAgICAgICAgICAgICAgICAgICAgICAjInBiZGJfYWNjZXB0ZWRfc2lzdF9zdWJnZW51c19pZCIgPSAic3ViZ2VudXNfbm8iLA0KICAgICAgICAgICAgICAgICAgICAgICAicGJkYl9hY2NlcHRlZF9zaXN0X3R5cGVfbmFtZSIgPSAidHlwZV90YXhvbiIsDQogICAgICAgICAgICAgICAgICAgICAgICMicGJkYl9hY2NlcHRlZF9zaXN0X3R5cGVfaWQiID0gInR5cGVfdGF4b25fbm8iLA0KICAgICAgICAgICAgICAgICAgICAgICAicGJkYl9hY2NlcHRlZF9jb3VudF9vcmRlcnMiID0gIm5fb3JkZXJzIiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfYWNjZXB0ZWRfY291bnRfZmFtaWxpZXMiID0gIm5fZmFtaWxpZXMiLA0KICAgICAgICAgICAgICAgICAgICAgICAicGJkYl9hY2NlcHRlZF9jb3VudF9nZW5lcmEiID0gIm5fZ2VuZXJhIiwNCiAgICAgICAgICAgICAgICAgICAgICAgInBiZGJfYWNjZXB0ZWRfY291bnRfc3BlY2llcyIgPSAibl9zcGVjaWVzIikNCg0KaW5mb190eXBvX2ZpeF92Y3QgPC0gYygiQ3VzYWZvbnQiID0gIkNydXNhZm9udCIsDQogICAgICAgICAgICAgICAgICAgICAgICJHZW9mZnJveS1TYWludC1IaWxsYWlyZSIgPSAiR2VvZmZyb3ktU2FpbnQtSGlsYWlyZSIsDQogICAgICAgICAgICAgICAgICAgICAgICJQb2Nrb2NrIiA9ICJQb2NvY2siLA0KICAgICAgICAgICAgICAgICAgICAgICAiUm9zc2VuYsO8bGxlciIgPSAiUm9zZW5tw7xsbGVyIiwNCiAgICAgICAgICAgICAgICAgICAgICAgIlNvbHVuaWFzIiA9ICJTb2xvdW5pYXMiLCAjaHR0cHM6Ly9zanBwLnNwcmluZ2Vyb3Blbi5jb20vYXJ0aWNsZXMvMTAuMTAwNy9zMTMzNTgtMDEyLTAwNDIteQ0KICAgICAgICAgICAgICAgICAgICAgICAiWmltbWVybWFuICIgPSAiWmltbWVybWFubiAiLA0KICAgICAgICAgICAgICAgICAgICAgICAiS3JldHNvaSIgPSAiS3JldHpvaSIpIA0KDQpwYmRiXzI1MDMwOF9jYXJuX3Jhd19kdGYgPC0gcGJkYl8yNTAzMDhfY2Fybl9yYXdfZHRmICU+JQ0KICByZW5hbWUoYWxsX29mKHBiZGJfY29sbmFtZXNfdmN0KSkgJT4lDQogIG11dGF0ZShhY3Jvc3Mod2hlcmUoaXMuY2hhcmFjdGVyKSwgDQogICAgICAgICAgICAgICAgfnN0cl9yZXBsYWNlX2FsbCguLCBpbmZvX3R5cG9fZml4X3ZjdCkpKQ0KDQphY2NlcHRlZF90YXhhX2F0dHIgPC0gcGJkYl8yNTAzMDhfY2Fybl9yYXdfZHRmICU+JQ0KICBzZWxlY3QocGJkYl90YXhvbl9uYW1lLA0KICAgICAgICAgcGJkYl9hY2NlcHRlZF9uYW1lLA0KICAgICAgICAgcGJkYl90YXhvbl9hdXRob3JpdHksDQogICAgICAgICBwYmRiX3RheG9uX2lkLA0KICAgICAgICAgcGJkYl9hY2NlcHRlZF9pZA0KICApICU+JQ0KICBtdXRhdGUocGJkYl90YXhvbl9hdXRob3JpdHlfY29weSA9IHBiZGJfdGF4b25fYXV0aG9yaXR5KSAlPiUNCiAgZmlsdGVyKHBiZGJfYWNjZXB0ZWRfbmFtZSA9PSBwYmRiX3RheG9uX25hbWUpICU+JQ0KICByZW5hbWUocGJkYl9hY2NlcHRlZF9hdXRob3JpdHkgPSBwYmRiX3RheG9uX2F1dGhvcml0eV9jb3B5KSAlPiUNCiAgbXV0YXRlKA0KICAgIHBiZGJfYWNjZXB0ZWRfYXV0aG9yaXR5X3BhcmVudGhlc2VzID0gY2FzZV93aGVuKA0KICAgICAgc3RyX2RldGVjdChwYmRiX2FjY2VwdGVkX2F1dGhvcml0eSwNCiAgICAgICAgICAgICAgICAgcGF0dGVybiA9ICJcXCgiDQogICAgICApIH4gInllcyIsDQogICAgICAhc3RyX2RldGVjdChwYmRiX2FjY2VwdGVkX2F1dGhvcml0eSwNCiAgICAgICAgICAgICAgICAgIHBhdHRlcm4gPSAiXFwoIg0KICAgICAgKSB+ICJubyINCiAgICApLA0KICAgIHBiZGJfYWNjZXB0ZWRfYXV0aG9yaXR5X3BhcmVudGhlc2VzID0gYXMuZmFjdG9yKHBiZGJfYWNjZXB0ZWRfYXV0aG9yaXR5X3BhcmVudGhlc2VzKSwNCiAgICBhY2NlcHRlZF9jb3B5ID0gcGJkYl9hY2NlcHRlZF9hdXRob3JpdHksDQogICAgYWNjZXB0ZWRfY29weSA9IHN0cl9yZXBsYWNlX2FsbChhY2NlcHRlZF9jb3B5LA0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcGF0dGVybiA9ICJcXCh8XFwpfCx8XFwuIiwNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJlcGxhY2VtZW50ID0gIiINCiAgICApLA0KICAgIGFjY2VwdGVkX2NvcHkgPSBzdHJfcmVwbGFjZV9hbGwoYWNjZXB0ZWRfY29weSwNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBhdHRlcm4gPSAiICAiLA0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmVwbGFjZW1lbnQgPSAiICINCiAgICApDQogICkgJT4lDQogIGRpc3RpbmN0KCkNCg0KI0ZpbHRyYW5kbyBhdXRvcmlkYWRlcyBxdWUgdGVtIGFubyBlIGNyaWFuZG8gY29sdW5hIGRlIGFubw0KYWNjZXB0ZWRfdGF4YV9hdHRyX2Zvcm1hdCA8LSBhY2NlcHRlZF90YXhhX2F0dHIgJT4lIA0KICBmaWx0ZXIoc3RyX2RldGVjdChhY2NlcHRlZF9jb3B5LCANCiAgICAgICAgICAgICAgICAgICAgcGF0dGVybiA9ICJbOmRpZ2l0Ol0iKSkgJT4lIA0KICBtdXRhdGUoYWNjZXB0ZWRfY29weSA9IHN0cmluZ2k6OnN0cmlfcmVwbGFjZV9sYXN0X2ZpeGVkKGFjY2VwdGVkX2NvcHksIA0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBhdHRlcm4gPSAiICIsDQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmVwbGFjZW1lbnQgPSAifiIpKSAlPiUNCiAgc2VwYXJhdGUoYWNjZXB0ZWRfY29weSwgDQogICAgICAgICAgIGludG8gPSBjKCJwYmRiX2FjY2VwdGVkX2F1dGhvcl9uYW1lX2Zvcm1hdCIsIA0KICAgICAgICAgICAgICAgICAgICAicGJkYl9hY2NlcHRlZF9hdXRob3JfeWVhciIpLCANCiAgICAgICAgICAgc2VwID0gIn4iKSAlPiUNCiAgDQogIGRpc3RpbmN0KCkNCg0KI0p1bnRhbmRvIGNvbSBhdXRvcmlkYWRlcyBzZW0gYW5vIGUgZm9ybWF0YW5kbyBub21lcyBkb3MgYXV0b3Jlcw0KYWNjZXB0ZWRfdGF4YV9hdHRyX2Zvcm1hdCA8LSBmdWxsX2pvaW4oYWNjZXB0ZWRfdGF4YV9hdHRyLCBhY2NlcHRlZF90YXhhX2F0dHJfZm9ybWF0KSAlPiUNCiAgbXV0YXRlKHBiZGJfYWNjZXB0ZWRfYXV0aG9yX25hbWVfZm9ybWF0ID0gY2FzZV93aGVuKA0KICAgIGlzLm5hKHBiZGJfYWNjZXB0ZWRfYXV0aG9yX25hbWVfZm9ybWF0KSB+IHBiZGJfYWNjZXB0ZWRfYXV0aG9yaXR5LA0KICAgIFRSVUUgfiBwYmRiX2FjY2VwdGVkX2F1dGhvcl9uYW1lX2Zvcm1hdCkpICU+JQ0KICBtdXRhdGUocGJkYl9hY2NlcHRlZF9hdXRob3JfbmFtZV9mb3JtYXQgPSBzdHJpbmdpOjogc3RyaV90cmFuc19nZW5lcmFsKHBiZGJfYWNjZXB0ZWRfYXV0aG9yX25hbWVfZm9ybWF0LCAiTGF0aW4tQVNDSUkiKSwNCiAgICAgICAgIHBiZGJfYWNjZXB0ZWRfYXV0aG9yX25hbWVfZm9ybWF0ID0gdG91cHBlcihwYmRiX2FjY2VwdGVkX2F1dGhvcl9uYW1lX2Zvcm1hdCksDQogICAgICAgICBwYmRiX2FjY2VwdGVkX2F1dGhvcl9uYW1lX2Zvcm1hdCA9IHN0cl9yZXBsYWNlX2FsbChwYmRiX2FjY2VwdGVkX2F1dGhvcl9uYW1lX2Zvcm1hdCwNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBhdHRlcm4gPSAiIEVUIEFMIiwNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJlcGxhY2VtZW50ID0gIl9FVC1BTCIpLA0KICAgICAgICAgcGJkYl9hY2NlcHRlZF9hdXRob3JfbmFtZV9mb3JtYXQgPSBzdHJfcmVwbGFjZV9hbGwocGJkYl9hY2NlcHRlZF9hdXRob3JfbmFtZV9mb3JtYXQsDQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBwYXR0ZXJuID0gIiBBTkQgIiwNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJlcGxhY2VtZW50ID0gIl8iKSwNCiAgICAgICAgIHBiZGJfYWNjZXB0ZWRfYXV0aG9yX25hbWVfZm9ybWF0ID0gc3RyX3JlcGxhY2VfYWxsKHBiZGJfYWNjZXB0ZWRfYXV0aG9yX25hbWVfZm9ybWF0LA0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcGF0dGVybiA9ICIgQU5EXyIsDQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICByZXBsYWNlbWVudCA9ICJfIiksDQogICAgICAgICBwYmRiX2FjY2VwdGVkX2F1dGhvcl9uYW1lX2Zvcm1hdCA9IHN0cl9yZXBsYWNlX2FsbChwYmRiX2FjY2VwdGVkX2F1dGhvcl9uYW1lX2Zvcm1hdCwNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBhdHRlcm4gPSAiICIsDQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICByZXBsYWNlbWVudCA9ICItIikpICU+JQ0KICBzZWxlY3QoLWFjY2VwdGVkX2NvcHksDQogICAgICAgICAtcGJkYl90YXhvbl9uYW1lLA0KICAgICAgICAgLXBiZGJfdGF4b25faWQsDQogICAgICAgICAtcGJkYl90YXhvbl9hdXRob3JpdHkpICU+JQ0KICBkaXN0aW5jdCgpDQoNCiNKdW50YW5kbyBjb20gcmVzdG8gZGEgdGFiZWxhLCBmb3JtYW50YW5kbyBub21lcyBkZSB0YXhhIGUgZmFtw61saWENCnBiZGJfMjUwMzA4X2Nhcm5fcmF3X2R0ZiA8LSBwYmRiXzI1MDMwOF9jYXJuX3Jhd19kdGYgJT4lDQogIGZ1bGxfam9pbiguLCBhY2NlcHRlZF90YXhhX2F0dHJfZm9ybWF0KSAlPiUNCiAgbXV0YXRlKHBiZGJfYWNjZXB0ZWRfbmFtZSA9IHN0cl9yZXBsYWNlX2FsbChwYmRiX2FjY2VwdGVkX25hbWUsIA0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBhdHRlcm4gPSAiICIsIA0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJlcGxhY2VtZW50ID0gIl8iKSwNCiAgICAgICAgIHBiZGJfdGF4b25fbmFtZSA9IHN0cl9yZXBsYWNlX2FsbChwYmRiX3RheG9uX25hbWUsIA0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBhdHRlcm4gPSAiICIsIA0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJlcGxhY2VtZW50ID0gIl8iKSwNCiAgICAgICAgIHBiZGJfYWNjZXB0ZWRfc2lzdF9mYW1pbHlfbmFtZSA9IHRvdXBwZXIocGJkYl9hY2NlcHRlZF9zaXN0X2ZhbWlseV9uYW1lKSkgJT4lDQogIGRpc3RpbmN0KCkNCg0KcGJkYl9iYWNrYm9uZV9jYXJuXzI1MDMwOCA8LSBwYmRiXzI1MDMwOF9jYXJuX3Jhd19kdGYgJT4lDQogIHNlbGVjdChwYmRiX3RheG9uX25hbWUsDQogICAgICAgICBwYmRiX3RheG9uX2F1dGhvcml0eSwNCiAgICAgICAgIHBiZGJfYWNjZXB0ZWRfbmFtZSwNCiAgICAgICAgIHBiZGJfYWNjZXB0ZWRfcmFuaywNCiAgICAgICAgIHBiZGJfYWNjZXB0ZWRfYXV0aG9yaXR5LA0KICAgICAgICAgcGJkYl9hY2NlcHRlZF9hdXRob3JfbmFtZV9mb3JtYXQsDQogICAgICAgICBwYmRiX2FjY2VwdGVkX2F1dGhvcl95ZWFyLA0KICAgICAgICAgcGJkYl9hY2NlcHRlZF9hdXRob3JfeWVhciwNCiAgICAgICAgIHBiZGJfYWNjZXB0ZWRfYXV0aG9yaXR5X3BhcmVudGhlc2VzKQ0KDQp3cml0ZS5jc3YocGJkYl9iYWNrYm9uZV9jYXJuXzI1MDMwOCwNCiAgICAgICAgICBmaWxlID0gaGVyZTo6aGVyZSgiZGF0YSIsDQogICAgICAgICAgICAgICAgICAgICAgInByb2Nlc3NlZCIsDQogICAgICAgICAgICAgICAgICAgICAgInBiZGJfYmFja2JvbmVfY2Fybl8yNTAzMDguY3N2IikpDQoNCmBgYA0KDQo=</div>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeSourceEmbed("mod2_processameto_backbone_taxonomico.Rmd");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
