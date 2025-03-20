@@ -13,6 +13,9 @@ navbar:
     - text: "Introdução"
       href: index.html
     - text: "Módulo 1 - download e processamento de dados de ocorrência"
+      menu:
+      - text: "Leitura e limpeza dos dados PBDB"
+        href: mod1_clean_pbdb_raw.html
       href: mod1_download_processamento.html
     - text: "Módulo 2 - harmonização taxonômica"
       menu:

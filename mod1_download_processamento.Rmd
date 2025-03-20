@@ -7,8 +7,17 @@ output: html_document
 
 # Download de dados
 
+```{r,eval=FALSE}
+source(here::here("R_functions", "nome_da_funcao.R"))
+source(here::here("R_functions", "nome_da_funcao.R"))
+source(here::here("R_functions", "nome_da_funcao.R"))
+```
+
+
 Download dados PBDB e NOW. Ambos foram baixados direto a partir do site. Utilizamos dados
     de Carnivora
+    
+
 
 ## Bases de dados usadas
 
@@ -24,7 +33,7 @@ df_pbdb <- read.csv(here::here("data", "pbdb_data.csv"), sep = ";")
 
 Dados brutos vindos do NOW
 
-```{r}
+```{r,eval=FALSE}
 df_now <- read.csv(here::here("data", "now_data.csv"), sep = ";")
 ```
 

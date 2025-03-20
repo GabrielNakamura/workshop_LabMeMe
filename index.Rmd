@@ -7,3 +7,9 @@ output: html_document
 
 Aqui a figura esquemática do Tiago com os módulos e explicando o funcionamento do
     documento
+
+AS funções estão na pasta XXX
+
+função x: o que ela faz...
+
+Função y: o que ela faz...

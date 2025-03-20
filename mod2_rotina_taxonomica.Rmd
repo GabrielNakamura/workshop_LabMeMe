@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Download e limpeza inicial das variáveis e pacotes necessários
 
-```{r}
+```{r, eval=FALSE}
 library(dplyr)
 library(readr)
 library(stringr)
@@ -23,13 +23,13 @@ library(stringr)
 
 - Dados de ocorrência que contenha, no mínimo, o nível de identificação da ocorrência
 
-```{r}
+```{r,eval=FALSE}
 df_backbone_pbdb <- 
   read.csv(here::here("data", "processed", "pbdb_backbone_carn_250308.csv"))
 ```
 
 ## Dados de ocorrencia NOW
-```{r}
+```{r, eval=FALSE}
 df_occ_now <- read.csv(here::here("data", "now_data.csv"), sep = ";")
 
 df_occ_now2 <- 
@@ -50,7 +50,7 @@ Aqui realizamos uma padronização de nomes de autores...[Thais]
 
 Usando a backbone já processada no script ´mod2_processamento_backbone_taxonomico.Rmd´ 
 
-```{r}
+```{r, eval=FALSE}
 vec_spp_consensus <- 
   match(df_backbone_pbdb$pbdb_accepted_name, df_occ_now3$genus_species)[!is.na(match(df_backbone_pbdb$pbdb_accepted_name, df_occ_now3$genus_species))]
 
@@ -93,7 +93,7 @@ Os dados de ocorrência utilizados são provenientes do NOW, então o que vamos 
 Os dados da backbone taxonomica foram baixados do pbdb, mas eles vem com colunas repetidas
     aqui limpamos essas colunas
     
-```{r}
+```{r,eval=FALSE}
 back_tax <- read.csv(here::here("data", "pbdb_taxa_250318_carnivora_namao.csv"), sep = ";", skip = 15)
 
 # removendo colunas repetidas
@@ -106,7 +106,7 @@ back_tax <- read.csv(here::here("data", "pbdb_taxa_250318_carnivora_namao.csv"),
 
 Remover colunas desnecessárias para a backbone taxonômica
 
-```{r}
+```{r, eval=FALSE}
 df_back_cleaned <- 
   back_tax |> 
   select(order, family, genus, taxon_name, taxon_attr, accepted_name, accepted_rank,  ref_author, ref_pubyr)

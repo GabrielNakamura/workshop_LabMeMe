@@ -9,11 +9,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Gabriel Nakamura" />
+<meta name="author" content="Carlos Calderon" />
 
-<meta name="date" content="2025-03-19" />
+<meta name="date" content="2025-03-20" />
 
-<title>Rotina download e processamento</title>
+<title>Cleaning PBDB raw</title>
 
 <script src="site_libs/header-attrs-2.28/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -474,39 +474,49 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Rotina download e processamento</h1>
-<h4 class="author">Gabriel Nakamura</h4>
-<h4 class="date">2025-03-19</h4>
+<h1 class="title toc-ignore">Cleaning PBDB raw</h1>
+<h4 class="author">Carlos Calderon</h4>
+<h4 class="date">2025-03-20</h4>
 
 </div>
 
 
-<div id="download-de-dados" class="section level1">
-<h1>Download de dados</h1>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;R_functions&quot;</span>, <span class="st">&quot;nome_da_funcao.R&quot;</span>))</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;R_functions&quot;</span>, <span class="st">&quot;nome_da_funcao.R&quot;</span>))</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;R_functions&quot;</span>, <span class="st">&quot;nome_da_funcao.R&quot;</span>))</span></code></pre></div>
-<p>Download dados PBDB e NOW. Ambos foram baixados direto a partir do
-site. Utilizamos dados de Carnivora</p>
-<div id="bases-de-dados-usadas" class="section level2">
-<h2>Bases de dados usadas</h2>
-<div id="pbdb" class="section level3">
-<h3>PBDB</h3>
-<p>Dados brutos vindos do PBDB</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>df_pbdb <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;pbdb_data.csv&quot;</span>), <span class="at">sep =</span> <span class="st">&quot;;&quot;</span>)</span></code></pre></div>
-</div>
-<div id="now" class="section level3">
-<h3>NOW</h3>
-<p>Dados brutos vindos do NOW</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>df_now <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;now_data.csv&quot;</span>), <span class="at">sep =</span> <span class="st">&quot;;&quot;</span>)</span></code></pre></div>
-</div>
-</div>
-</div>
-<div id="seleção-de-variáveis-das-ocorrências" class="section level1">
-<h1>Seleção de variáveis das ocorrências</h1>
-</div>
+<p>First, you have to download the fossil occurrences directly from the
+PBDB site.</p>
+<p>The directory where the PBDB raw data was saved:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co">#file_PBDB &lt;- &quot;raw_files/pbdb_data.csv&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>file_PBDB <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;raw_files&quot;</span>, <span class="st">&quot;pbdb_data.csv&quot;</span>)</span></code></pre></div>
+<p>Create a directory where to save the PBDB output.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>dir <span class="ot">&lt;-</span> <span class="st">&quot;PBDB_output&quot;</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">dir.exists</span>(dir)) {</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="fu">dir.create</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;output&quot;</span>, dir))</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>}</span></code></pre></div>
+<p>Define file paths</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>input_file <span class="ot">&lt;-</span> file_PBDB</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>output_file <span class="ot">&lt;-</span> <span class="fu">paste0</span>(dir, <span class="st">&quot;/pbdb_cleaned.csv&quot;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>input_file <span class="ot">&lt;-</span> file_PBDB</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>output_file <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;output&quot;</span>, dir, <span class="st">&quot;pbdb_cleaned.csv&quot;</span>)</span></code></pre></div>
+<p>Read the file as lines</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>lines <span class="ot">&lt;-</span> <span class="fu">readLines</span>(input_file)</span></code></pre></div>
+<p>Find the index where “Records:” appears (this marks the start of
+actual data)</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>data_start_index <span class="ot">&lt;-</span> <span class="fu">which</span>(lines <span class="sc">==</span> <span class="st">&quot;</span><span class="sc">\&quot;</span><span class="st">Records:</span><span class="sc">\&quot;</span><span class="st">&quot;</span>) <span class="sc">+</span> <span class="dv">1</span></span></code></pre></div>
+<p>Extract metadata (It contains the info about when the data was
+downloaded, the number of records, the license, where the data was
+downloaded, etc.)</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>metadata <span class="ot">&lt;-</span> lines[<span class="dv">1</span><span class="sc">:</span>(data_start_index <span class="sc">-</span> <span class="dv">2</span>)]</span></code></pre></div>
+<p>Extract column names and data for building the pbdb_clean</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>columns <span class="ot">&lt;-</span> lines[data_start_index]</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>data <span class="ot">&lt;-</span> lines[(data_start_index <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span><span class="fu">length</span>(lines)]</span></code></pre></div>
+<p>Write and save the cleaned output</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">writeLines</span>(<span class="fu">c</span>(columns, data), output_file)</span></code></pre></div>
+<p>Write the metadata</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># writeLines(metadata, paste0(dir, &quot;/metada_pbdb.csv&quot;))</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="fu">writeLines</span>(metadata, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;output&quot;</span>, dir, <span class="st">&quot;metadata_pbdb.csv&quot;</span>))</span></code></pre></div>
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIlJvdGluYSBkb3dubG9hZCBlIHByb2Nlc3NhbWVudG8iDQphdXRob3I6ICJHYWJyaWVsIE5ha2FtdXJhIg0KZGF0ZTogIjIwMjUtMDMtMTkiDQpvdXRwdXQ6IGh0bWxfZG9jdW1lbnQNCi0tLQ0KDQojIERvd25sb2FkIGRlIGRhZG9zDQoNCmBgYHtyLGV2YWw9RkFMU0V9DQpzb3VyY2UoaGVyZTo6aGVyZSgiUl9mdW5jdGlvbnMiLCAibm9tZV9kYV9mdW5jYW8uUiIpKQ0Kc291cmNlKGhlcmU6OmhlcmUoIlJfZnVuY3Rpb25zIiwgIm5vbWVfZGFfZnVuY2FvLlIiKSkNCnNvdXJjZShoZXJlOjpoZXJlKCJSX2Z1bmN0aW9ucyIsICJub21lX2RhX2Z1bmNhby5SIikpDQpgYGANCg0KDQpEb3dubG9hZCBkYWRvcyBQQkRCIGUgTk9XLiBBbWJvcyBmb3JhbSBiYWl4YWRvcyBkaXJldG8gYSBwYXJ0aXIgZG8gc2l0ZS4gVXRpbGl6YW1vcyBkYWRvcw0KICAgIGRlIENhcm5pdm9yYQ0KICAgIA0KDQoNCiMjIEJhc2VzIGRlIGRhZG9zIHVzYWRhcw0KDQojIyMgUEJEQg0KDQpEYWRvcyBicnV0b3MgdmluZG9zIGRvIFBCREINCg0KYGBge3J9DQpkZl9wYmRiIDwtIHJlYWQuY3N2KGhlcmU6OmhlcmUoImRhdGEiLCAicGJkYl9kYXRhLmNzdiIpLCBzZXAgPSAiOyIpDQpgYGANCg0KIyMjIE5PVw0KDQpEYWRvcyBicnV0b3MgdmluZG9zIGRvIE5PVw0KDQpgYGB7cixldmFsPUZBTFNFfQ0KZGZfbm93IDwtIHJlYWQuY3N2KGhlcmU6OmhlcmUoImRhdGEiLCAibm93X2RhdGEuY3N2IiksIHNlcCA9ICI7IikNCmBgYA0KDQoNCg0KDQoNCg0KDQoNCiMgU2VsZcOnw6NvIGRlIHZhcmnDoXZlaXMgZGFzIG9jb3Jyw6puY2lhcw0KDQo=</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIkNsZWFuaW5nIFBCREIgcmF3Ig0KYXV0aG9yOiAiQ2FybG9zIENhbGRlcm9uIg0KZGF0ZTogIjIwMjUtMDMtMjAiDQpvdXRwdXQ6IGh0bWxfZG9jdW1lbnQNCi0tLQ0KDQpGaXJzdCwgeW91IGhhdmUgdG8gZG93bmxvYWQgdGhlIGZvc3NpbCBvY2N1cnJlbmNlcyBkaXJlY3RseSBmcm9tIHRoZSBQQkRCIHNpdGUuDQoNClRoZSBkaXJlY3Rvcnkgd2hlcmUgdGhlIFBCREIgcmF3IGRhdGEgd2FzIHNhdmVkOg0KDQpgYGB7ciBzZXR1cCwgaW5jbHVkZT1GQUxTRSwgZXZhbD1GQUxTRX0NCmtuaXRyOjpvcHRzX2tuaXQkc2V0KHJvb3QuZGlyID0gIkM6L1VzZXJzL2NhcmxvL09uZURyaXZlL0Rlc2t0b3AvUG9zdF9kb2NfU1Avd29ya3Nob3BfVGlhZ28iKSAgIyBBZGp1c3QgcGF0aA0KDQprbml0cjo6b3B0c19jaHVuayRzZXQoZWNobyA9IFRSVUUsIGV2YWwgPSBGQUxTRSkNCg0KYGBgDQoNCmBgYHtyIGZpbGUsIGV2YWw9RkFMU0V9DQojZmlsZV9QQkRCIDwtICJyYXdfZmlsZXMvcGJkYl9kYXRhLmNzdiINCmZpbGVfUEJEQiA8LSBoZXJlOjpoZXJlKCJkYXRhIiwgInJhd19maWxlcyIsICJwYmRiX2RhdGEuY3N2IikNCmBgYA0KDQpDcmVhdGUgYSBkaXJlY3Rvcnkgd2hlcmUgdG8gc2F2ZSB0aGUgUEJEQiBvdXRwdXQuDQoNCmBgYHtyIGRpcmVjdG9yeSwgZXZhbD1GQUxTRX0NCmRpciA8LSAiUEJEQl9vdXRwdXQiDQppZiAoIWRpci5leGlzdHMoZGlyKSkgew0KICBkaXIuY3JlYXRlKGhlcmU6OmhlcmUoIm91dHB1dCIsIGRpcikpDQp9DQpgYGANCg0KRGVmaW5lIGZpbGUgcGF0aHMNCg0KYGBge3IgZmlsZSBwYXRocywgZXZhbD1GQUxTRX0NCmlucHV0X2ZpbGUgPC0gZmlsZV9QQkRCDQpvdXRwdXRfZmlsZSA8LSBwYXN0ZTAoZGlyLCAiL3BiZGJfY2xlYW5lZC5jc3YiKQ0KDQppbnB1dF9maWxlIDwtIGZpbGVfUEJEQg0Kb3V0cHV0X2ZpbGUgPC0gaGVyZTo6aGVyZSgib3V0cHV0IiwgZGlyLCAicGJkYl9jbGVhbmVkLmNzdiIpDQpgYGANCg0KUmVhZCB0aGUgZmlsZSBhcyBsaW5lcw0KDQpgYGB7ciwgZXZhbD1GQUxTRX0NCmxpbmVzIDwtIHJlYWRMaW5lcyhpbnB1dF9maWxlKQ0KYGBgDQoNCkZpbmQgdGhlIGluZGV4IHdoZXJlICJSZWNvcmRzOiIgYXBwZWFycyAodGhpcyBtYXJrcyB0aGUgc3RhcnQgb2YgYWN0dWFsIGRhdGEpDQoNCmBgYHtyLCBldmFsPUZBTFNFfQ0KZGF0YV9zdGFydF9pbmRleCA8LSB3aGljaChsaW5lcyA9PSAiXCJSZWNvcmRzOlwiIikgKyAxDQpgYGANCg0KRXh0cmFjdCBtZXRhZGF0YSAoSXQgY29udGFpbnMgdGhlIGluZm8gYWJvdXQgd2hlbiB0aGUgZGF0YSB3YXMgZG93bmxvYWRlZCwgdGhlIG51bWJlciBvZiByZWNvcmRzLCB0aGUgbGljZW5zZSwgd2hlcmUgdGhlIGRhdGEgd2FzIGRvd25sb2FkZWQsIGV0Yy4pDQoNCmBgYHtyLCBldmFsPUZBTFNFfQ0KbWV0YWRhdGEgPC0gbGluZXNbMTooZGF0YV9zdGFydF9pbmRleCAtIDIpXQ0KYGBgDQoNCkV4dHJhY3QgY29sdW1uIG5hbWVzIGFuZCBkYXRhIGZvciBidWlsZGluZyB0aGUgcGJkYl9jbGVhbg0KDQpgYGB7ciwgZXZhbD1GQUxTRX0NCmNvbHVtbnMgPC0gbGluZXNbZGF0YV9zdGFydF9pbmRleF0NCmRhdGEgPC0gbGluZXNbKGRhdGFfc3RhcnRfaW5kZXggKyAxKTpsZW5ndGgobGluZXMpXQ0KYGBgDQoNCldyaXRlIGFuZCBzYXZlIHRoZSBjbGVhbmVkIG91dHB1dA0KDQpgYGB7ciwgZXZhbD1GQUxTRX0NCndyaXRlTGluZXMoYyhjb2x1bW5zLCBkYXRhKSwgb3V0cHV0X2ZpbGUpDQpgYGANCg0KV3JpdGUgdGhlIG1ldGFkYXRhDQoNCmBgYHtyLCBldmFsPUZBTFNFfQ0KIyB3cml0ZUxpbmVzKG1ldGFkYXRhLCBwYXN0ZTAoZGlyLCAiL21ldGFkYV9wYmRiLmNzdiIpKQ0KDQp3cml0ZUxpbmVzKG1ldGFkYXRhLCBoZXJlOjpoZXJlKCJvdXRwdXQiLCBkaXIsICJtZXRhZGF0YV9wYmRiLmNzdiIpKQ0KYGBgDQo=</div>
 
 
 </div>
@@ -544,7 +554,7 @@ $(document).ready(function () {
 <!-- code folding -->
 <script>
 $(document).ready(function () {
-  window.initializeSourceEmbed("mod1_download_processamento.Rmd");
+  window.initializeSourceEmbed("mod1_clean_pbdb_raw.Rmd");
 });
 </script>
 

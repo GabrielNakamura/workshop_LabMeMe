@@ -1,0 +1,80 @@
+---
+title: "Cleaning PBDB raw"
+author: "Carlos Calderon"
+date: "2025-03-20"
+output: html_document
+---
+
+First, you have to download the fossil occurrences directly from the PBDB site.
+
+The directory where the PBDB raw data was saved:
+
+```{r setup, include=FALSE, eval=FALSE}
+knitr::opts_knit$set(root.dir = "C:/Users/carlo/OneDrive/Desktop/Post_doc_SP/workshop_Tiago")  # Adjust path
+
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+
+```
+
+```{r file, eval=FALSE}
+#file_PBDB <- "raw_files/pbdb_data.csv"
+file_PBDB <- here::here("data", "raw_files", "pbdb_data.csv")
+```
+
+Create a directory where to save the PBDB output.
+
+```{r directory, eval=FALSE}
+dir <- "PBDB_output"
+if (!dir.exists(dir)) {
+  dir.create(here::here("output", dir))
+}
+```
+
+Define file paths
+
+```{r file paths, eval=FALSE}
+input_file <- file_PBDB
+output_file <- paste0(dir, "/pbdb_cleaned.csv")
+
+input_file <- file_PBDB
+output_file <- here::here("output", dir, "pbdb_cleaned.csv")
+```
+
+Read the file as lines
+
+```{r, eval=FALSE}
+lines <- readLines(input_file)
+```
+
+Find the index where "Records:" appears (this marks the start of actual data)
+
+```{r, eval=FALSE}
+data_start_index <- which(lines == "\"Records:\"") + 1
+```
+
+Extract metadata (It contains the info about when the data was downloaded, the number of records, the license, where the data was downloaded, etc.)
+
+```{r, eval=FALSE}
+metadata <- lines[1:(data_start_index - 2)]
+```
+
+Extract column names and data for building the pbdb_clean
+
+```{r, eval=FALSE}
+columns <- lines[data_start_index]
+data <- lines[(data_start_index + 1):length(lines)]
+```
+
+Write and save the cleaned output
+
+```{r, eval=FALSE}
+writeLines(c(columns, data), output_file)
+```
+
+Write the metadata
+
+```{r, eval=FALSE}
+# writeLines(metadata, paste0(dir, "/metada_pbdb.csv"))
+
+writeLines(metadata, here::here("output", dir, "metadata_pbdb.csv"))
+```
