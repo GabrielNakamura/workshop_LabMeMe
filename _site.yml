@@ -16,6 +16,8 @@ navbar:
       menu:
       - text: "Leitura e limpeza dos dados PBDB"
         href: mod1_clean_pbdb_raw.html
+      - text: "Leitura e limpeza dos dados NOW"
+        href: mod1_read_wrangle_now_raw.html
       - text: "Limpeza, organização e filtragem de dados"
         href: mod1_download_processamento_lucas.html
     - text: "Módulo 2 - harmonização taxonômica"

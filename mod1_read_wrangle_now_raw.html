@@ -9,11 +9,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Gabriel Nakamura" />
+<meta name="author" content="Carlos Calderon" />
 
-<meta name="date" content="2025-03-18" />
+<meta name="date" content="2025-03-20" />
 
-<title>Harmonizando taxonomia de ocorrências</title>
+<title>Read and Wrangle NOW data</title>
 
 <script src="site_libs/header-attrs-2.28/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -480,110 +480,47 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Harmonizando taxonomia de ocorrências</h1>
-<h4 class="author">Gabriel Nakamura</h4>
-<h4 class="date">2025-03-18</h4>
+<h1 class="title toc-ignore">Read and Wrangle NOW data</h1>
+<h4 class="author">Carlos Calderon</h4>
+<h4 class="date">2025-03-20</h4>
 
 </div>
 
 
-<div id="download-e-limpeza-inicial-das-variáveis-e-pacotes-necessários"
-class="section level1">
-<h1>Download e limpeza inicial das variáveis e pacotes necessários</h1>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(stringr)</span></code></pre></div>
-</div>
-<div id="dados-necessários-para-essa-rotina" class="section level1">
-<h1>Dados necessários para essa rotina</h1>
-<ul>
-<li><p>Backbone taxonômica</p></li>
-<li><p>Dados de ocorrência que contenha, no mínimo, o nível de
-identificação da ocorrência</p></li>
-</ul>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>df_backbone_pbdb <span class="ot">&lt;-</span> </span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;processed&quot;</span>, <span class="st">&quot;pbdb_backbone_carn_250308.csv&quot;</span>))</span></code></pre></div>
-<div id="dados-de-ocorrencia-now" class="section level2">
-<h2>Dados de ocorrencia NOW</h2>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>df_occ_now <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;now_data.csv&quot;</span>), <span class="at">sep =</span> <span class="st">&quot;;&quot;</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>df_occ_now2 <span class="ot">&lt;-</span> </span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  df_occ_now <span class="sc">|&gt;</span> </span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">genus_species =</span> <span class="fu">paste</span>(GENUS, SPECIES, <span class="at">sep =</span> <span class="st">&quot;_&quot;</span>))</span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>df_occ_now3 <span class="ot">&lt;-</span> </span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  df_occ_now2 <span class="sc">|&gt;</span> </span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="fu">select</span>(ORDER, FAMILY, GENUS, SPECIES, genus_species, LAT, LONG)</span></code></pre></div>
-</div>
-</div>
-<div id="padronizando-backbone-taxonômica" class="section level1">
-<h1>Padronizando backbone taxonômica</h1>
-<div id="backbone-taxonômica-pbdb" class="section level2">
-<h2>backbone taxonômica PBDB</h2>
-<p>Aqui realizamos uma padronização de nomes de autores…[Thais]</p>
-<p>Usando a backbone já processada no script
-´mod2_processamento_backbone_taxonomico.Rmd´</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>vec_spp_consensus <span class="ot">&lt;-</span> </span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="fu">match</span>(df_backbone_pbdb<span class="sc">$</span>pbdb_accepted_name, df_occ_now3<span class="sc">$</span>genus_species)[<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">match</span>(df_backbone_pbdb<span class="sc">$</span>pbdb_accepted_name, df_occ_now3<span class="sc">$</span>genus_species))]</span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>df_consensus_tax_occ <span class="ot">&lt;-</span> </span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  df_occ_now3[vec_spp_consensus, ]</span>
+<p>First, you have to download the fossil occurrences directly from the
+NOW site.</p>
+<p>The directory where the NOW raw data was saved:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>dir_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;raw_files&quot;</span>)</span></code></pre></div>
+<p>List all files in the directory and find the file that contains “now”
+or “NOW”</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(dir_path, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>target_file <span class="ot">&lt;-</span> files[<span class="fu">grepl</span>(<span class="st">&quot;now&quot;</span>, files, <span class="at">ignore.case =</span> <span class="cn">TRUE</span>)]</span></code></pre></div>
+<p>Check if a file was found</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">length</span>(target_file) <span class="sc">==</span> <span class="dv">0</span>) {</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="fu">stop</span>(<span class="st">&quot;No file containing &#39;now&#39; or &#39;NOW&#39; found in the directory.&quot;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>} <span class="cf">else</span> <span class="cf">if</span> (<span class="fu">length</span>(target_file) <span class="sc">&gt;</span> <span class="dv">1</span>) {</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="fu">stop</span>(<span class="st">&quot;Multiple files match. Please specify further.&quot;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>}</span></code></pre></div>
+<p>Read the NOW file and data wrangling</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read.delim</span>(target_file,</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>                 <span class="at">header =</span> <span class="cn">FALSE</span>, <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">na.strings =</span> <span class="fu">c</span>(<span class="st">&quot;</span><span class="sc">\\</span><span class="st">N&quot;</span>, <span class="st">&quot;-&quot;</span>),</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>                 <span class="at">row.names =</span> <span class="cn">NULL</span>) </span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="fu">colnames</span>(df) <span class="ot">&lt;-</span> df[<span class="dv">1</span>,]</span>
 <span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>df_noconsensus_tax_occ <span class="ot">&lt;-</span> </span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  df_occ_now3[<span class="sc">-</span>vec_spp_consensus, ]</span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>vec_synonym <span class="ot">&lt;-</span> </span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  <span class="fu">match</span>(df_backbone_pbdb<span class="sc">$</span>pbdb_taxon_name, df_noconsensus_tax_occ<span class="sc">$</span>genus_species)[<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">match</span>(df_backbone_pbdb<span class="sc">$</span>pbdb_taxon_name, df_noconsensus_tax_occ<span class="sc">$</span>genus_species))]</span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a></span>
-<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>df_synonym_tax <span class="ot">&lt;-</span> df_noconsensus_tax_occ[vec_synonym, ]</span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a></span>
-<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="fu">match</span>(df_synonym_tax<span class="sc">$</span>genus_species, df_backbone_pbdb<span class="sc">$</span>pbdb_taxon_name)</span>
-<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a></span>
-<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="fu">dim</span>(df_consensus_tax_occ)</span>
-<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="fu">dim</span>(df_occ_now)</span></code></pre></div>
-</div>
-<div id="backbone-taxonômica-now" class="section level2">
-<h2>Backbone taxonômica NOW</h2>
-<p>Aqui realizamos a mesma padronização mas sem os nomes dos autores,
-pois NOW não tem [Thais]</p>
-</div>
-</div>
-<div id="harmonizando-dados-de-ocorrência-para-a-taxonomia-usada"
-class="section level1">
-<h1>Harmonizando dados de ocorrência para a taxonomia usada</h1>
-<p>Primeiro vemos quais ocorrências apresentam nomes que batem com a
-backbone taxonomica utilizada, neste caso o pbdb</p>
-<p>Os dados de ocorrência utilizados são provenientes do NOW, então o
-que vamos fazer neste passo é padronizar os nomes das ocorrências de
-acordo com o a backbone do PBDB</p>
-<div id="limpeza-taxonômica" class="section level2">
-<h2>Limpeza taxonômica</h2>
-</div>
-<div id="harmonização" class="section level2">
-<h2>Harmonização</h2>
-<p>Os dados da backbone taxonomica foram baixados do pbdb, mas eles vem
-com colunas repetidas aqui limpamos essas colunas</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>back_tax <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;pbdb_taxa_250318_carnivora_namao.csv&quot;</span>), <span class="at">sep =</span> <span class="st">&quot;;&quot;</span>, <span class="at">skip =</span> <span class="dv">15</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co"># removendo colunas repetidas</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co"># df_back_cleaned &lt;- </span></span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#   back_tax  |&gt; </span></span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#   select(-matches(&quot;\\.&quot;))</span></span></code></pre></div>
-<p>Remover colunas desnecessárias para a backbone taxonômica</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>df_back_cleaned <span class="ot">&lt;-</span> </span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  back_tax <span class="sc">|&gt;</span> </span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="fu">select</span>(order, family, genus, taxon_name, taxon_attr, accepted_name, accepted_rank,  ref_author, ref_pubyr)</span></code></pre></div>
-<div id="obtenção-de-lista-de-autoridade-taxonômica"
-class="section level3">
-<h3>Obtenção de lista de autoridade taxonômica</h3>
-</div>
-<div id="padronização-da-lista" class="section level3">
-<h3>Padronização da lista</h3>
-</div>
-</div>
-</div>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>df <span class="ot">&lt;-</span> df[<span class="sc">-</span><span class="dv">1</span>,]</span></code></pre></div>
+<p>Create a directory where to save the NOW output</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>dir <span class="ot">&lt;-</span> <span class="st">&quot;NOW_output&quot;</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">dir.exists</span>(dir)) {</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="fu">dir.create</span>(dir)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>}</span></code></pre></div>
+<p>Naming the NOW file and saving it as csv format</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>output_file <span class="ot">&lt;-</span> <span class="fu">paste0</span>(dir, <span class="st">&quot;/now_cleaned.csv&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">write.csv</span>(df, <span class="at">file =</span> output_file)</span></code></pre></div>
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIkhhcm1vbml6YW5kbyB0YXhvbm9taWEgZGUgb2NvcnLDqm5jaWFzIg0KYXV0aG9yOiAiR2FicmllbCBOYWthbXVyYSINCmRhdGU6ICIyMDI1LTAzLTE4Ig0Kb3V0cHV0OiBodG1sX2RvY3VtZW50DQotLS0NCg0KYGBge3Igc2V0dXAsIGluY2x1ZGU9RkFMU0V9DQprbml0cjo6b3B0c19jaHVuayRzZXQoZWNobyA9IFRSVUUpDQpgYGANCg0KIyBEb3dubG9hZCBlIGxpbXBlemEgaW5pY2lhbCBkYXMgdmFyacOhdmVpcyBlIHBhY290ZXMgbmVjZXNzw6FyaW9zDQoNCmBgYHtyLCBldmFsPUZBTFNFfQ0KbGlicmFyeShkcGx5cikNCmxpYnJhcnkocmVhZHIpDQpsaWJyYXJ5KHN0cmluZ3IpDQoNCmBgYA0KIyBEYWRvcyBuZWNlc3PDoXJpb3MgcGFyYSBlc3NhIHJvdGluYQ0KDQotIEJhY2tib25lIHRheG9uw7RtaWNhIA0KDQotIERhZG9zIGRlIG9jb3Jyw6puY2lhIHF1ZSBjb250ZW5oYSwgbm8gbcOtbmltbywgbyBuw612ZWwgZGUgaWRlbnRpZmljYcOnw6NvIGRhIG9jb3Jyw6puY2lhDQoNCmBgYHtyLGV2YWw9RkFMU0V9DQpkZl9iYWNrYm9uZV9wYmRiIDwtIA0KICByZWFkLmNzdihoZXJlOjpoZXJlKCJkYXRhIiwgInByb2Nlc3NlZCIsICJwYmRiX2JhY2tib25lX2Nhcm5fMjUwMzA4LmNzdiIpKQ0KYGBgDQoNCiMjIERhZG9zIGRlIG9jb3JyZW5jaWEgTk9XDQpgYGB7ciwgZXZhbD1GQUxTRX0NCmRmX29jY19ub3cgPC0gcmVhZC5jc3YoaGVyZTo6aGVyZSgiZGF0YSIsICJub3dfZGF0YS5jc3YiKSwgc2VwID0gIjsiKQ0KDQpkZl9vY2Nfbm93MiA8LSANCiAgZGZfb2NjX25vdyB8PiANCiAgbXV0YXRlKGdlbnVzX3NwZWNpZXMgPSBwYXN0ZShHRU5VUywgU1BFQ0lFUywgc2VwID0gIl8iKSkNCg0KZGZfb2NjX25vdzMgPC0gDQogIGRmX29jY19ub3cyIHw+IA0KICBzZWxlY3QoT1JERVIsIEZBTUlMWSwgR0VOVVMsIFNQRUNJRVMsIGdlbnVzX3NwZWNpZXMsIExBVCwgTE9ORykNCmBgYA0KDQoNCiMgUGFkcm9uaXphbmRvIGJhY2tib25lIHRheG9uw7RtaWNhDQoNCiMjIGJhY2tib25lIHRheG9uw7RtaWNhIFBCREINCg0KQXF1aSByZWFsaXphbW9zIHVtYSBwYWRyb25pemHDp8OjbyBkZSBub21lcyBkZSBhdXRvcmVzLi4uW1RoYWlzXQ0KDQpVc2FuZG8gYSBiYWNrYm9uZSBqw6EgcHJvY2Vzc2FkYSBubyBzY3JpcHQgwrRtb2QyX3Byb2Nlc3NhbWVudG9fYmFja2JvbmVfdGF4b25vbWljby5SbWTCtCANCg0KYGBge3IsIGV2YWw9RkFMU0V9DQp2ZWNfc3BwX2NvbnNlbnN1cyA8LSANCiAgbWF0Y2goZGZfYmFja2JvbmVfcGJkYiRwYmRiX2FjY2VwdGVkX25hbWUsIGRmX29jY19ub3czJGdlbnVzX3NwZWNpZXMpWyFpcy5uYShtYXRjaChkZl9iYWNrYm9uZV9wYmRiJHBiZGJfYWNjZXB0ZWRfbmFtZSwgZGZfb2NjX25vdzMkZ2VudXNfc3BlY2llcykpXQ0KDQpkZl9jb25zZW5zdXNfdGF4X29jYyA8LSANCiAgZGZfb2NjX25vdzNbdmVjX3NwcF9jb25zZW5zdXMsIF0NCg0KZGZfbm9jb25zZW5zdXNfdGF4X29jYyA8LSANCiAgZGZfb2NjX25vdzNbLXZlY19zcHBfY29uc2Vuc3VzLCBdDQoNCnZlY19zeW5vbnltIDwtIA0KICBtYXRjaChkZl9iYWNrYm9uZV9wYmRiJHBiZGJfdGF4b25fbmFtZSwgZGZfbm9jb25zZW5zdXNfdGF4X29jYyRnZW51c19zcGVjaWVzKVshaXMubmEobWF0Y2goZGZfYmFja2JvbmVfcGJkYiRwYmRiX3RheG9uX25hbWUsIGRmX25vY29uc2Vuc3VzX3RheF9vY2MkZ2VudXNfc3BlY2llcykpXQ0KDQpkZl9zeW5vbnltX3RheCA8LSBkZl9ub2NvbnNlbnN1c190YXhfb2NjW3ZlY19zeW5vbnltLCBdDQoNCm1hdGNoKGRmX3N5bm9ueW1fdGF4JGdlbnVzX3NwZWNpZXMsIGRmX2JhY2tib25lX3BiZGIkcGJkYl90YXhvbl9uYW1lKQ0KDQpkaW0oZGZfY29uc2Vuc3VzX3RheF9vY2MpDQpkaW0oZGZfb2NjX25vdykNCmBgYA0KDQojIyBCYWNrYm9uZSB0YXhvbsO0bWljYSBOT1cNCg0KQXF1aSByZWFsaXphbW9zIGEgbWVzbWEgcGFkcm9uaXphw6fDo28gbWFzIHNlbSBvcyBub21lcyBkb3MgYXV0b3JlcywgcG9pcyBOT1cgbsOjbyB0ZW0NCiAgIFtUaGFpc10NCg0KDQojIEhhcm1vbml6YW5kbyBkYWRvcyBkZSBvY29ycsOqbmNpYSBwYXJhIGEgdGF4b25vbWlhIHVzYWRhDQoNClByaW1laXJvIHZlbW9zIHF1YWlzIG9jb3Jyw6puY2lhcyBhcHJlc2VudGFtIG5vbWVzIHF1ZSBiYXRlbSBjb20gYSBiYWNrYm9uZSANCiAgICB0YXhvbm9taWNhIHV0aWxpemFkYSwgbmVzdGUgY2FzbyBvIHBiZGINCiAgICANCk9zIGRhZG9zIGRlIG9jb3Jyw6puY2lhIHV0aWxpemFkb3Mgc8OjbyBwcm92ZW5pZW50ZXMgZG8gTk9XLCBlbnTDo28gbyBxdWUgdmFtb3MgZmF6ZXINCiAgICBuZXN0ZSBwYXNzbyDDqSBwYWRyb25pemFyIG9zIG5vbWVzIGRhcyBvY29ycsOqbmNpYXMgZGUgYWNvcmRvIGNvbSBvIGEgYmFja2JvbmUNCiAgICBkbyBQQkRCDQoNCiMjIExpbXBlemEgdGF4b27DtG1pY2EgDQoNCiMjIEhhcm1vbml6YcOnw6NvIA0KDQpPcyBkYWRvcyBkYSBiYWNrYm9uZSB0YXhvbm9taWNhIGZvcmFtIGJhaXhhZG9zIGRvIHBiZGIsIG1hcyBlbGVzIHZlbSBjb20gY29sdW5hcyByZXBldGlkYXMNCiAgICBhcXVpIGxpbXBhbW9zIGVzc2FzIGNvbHVuYXMNCiAgICANCmBgYHtyLGV2YWw9RkFMU0V9DQpiYWNrX3RheCA8LSByZWFkLmNzdihoZXJlOjpoZXJlKCJkYXRhIiwgInBiZGJfdGF4YV8yNTAzMThfY2Fybml2b3JhX25hbWFvLmNzdiIpLCBzZXAgPSAiOyIsIHNraXAgPSAxNSkNCg0KIyByZW1vdmVuZG8gY29sdW5hcyByZXBldGlkYXMNCiMgZGZfYmFja19jbGVhbmVkIDwtIA0KIyAgIGJhY2tfdGF4ICB8PiANCiMgICBzZWxlY3QoLW1hdGNoZXMoIlxcLiIpKQ0KDQoNCmBgYA0KDQpSZW1vdmVyIGNvbHVuYXMgZGVzbmVjZXNzw6FyaWFzIHBhcmEgYSBiYWNrYm9uZSB0YXhvbsO0bWljYQ0KDQpgYGB7ciwgZXZhbD1GQUxTRX0NCmRmX2JhY2tfY2xlYW5lZCA8LSANCiAgYmFja190YXggfD4gDQogIHNlbGVjdChvcmRlciwgZmFtaWx5LCBnZW51cywgdGF4b25fbmFtZSwgdGF4b25fYXR0ciwgYWNjZXB0ZWRfbmFtZSwgYWNjZXB0ZWRfcmFuaywgIHJlZl9hdXRob3IsIHJlZl9wdWJ5cikNCmBgYA0KDQojIyMgT2J0ZW7Dp8OjbyBkZSBsaXN0YSBkZSBhdXRvcmlkYWRlIHRheG9uw7RtaWNhDQoNCiMjIyBQYWRyb25pemHDp8OjbyBkYSBsaXN0YQ0K</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIlJlYWQgYW5kIFdyYW5nbGUgTk9XIGRhdGEiDQphdXRob3I6ICJDYXJsb3MgQ2FsZGVyb24iDQpkYXRlOiAiMjAyNS0wMy0yMCINCm91dHB1dDogaHRtbF9kb2N1bWVudA0KLS0tDQoNCkZpcnN0LCB5b3UgaGF2ZSB0byBkb3dubG9hZCB0aGUgZm9zc2lsIG9jY3VycmVuY2VzIGRpcmVjdGx5IGZyb20gdGhlIE5PVyBzaXRlLg0KDQpUaGUgZGlyZWN0b3J5IHdoZXJlIHRoZSBOT1cgcmF3IGRhdGEgd2FzIHNhdmVkOg0KDQpgYGB7ciBzZXR1cCwgaW5jbHVkZT1GQUxTRX0NCmtuaXRyOjpvcHRzX2NodW5rJHNldChldmFsID0gRkFMU0UpDQojIGtuaXRyOjpvcHRzX2tuaXQkc2V0KHJvb3QuZGlyID0gIkM6L1VzZXJzL2NhcmxvL09uZURyaXZlL0Rlc2t0b3AvUG9zdF9kb2NfU1Avd29ya3Nob3BfVGlhZ28iKSAgIyBBZGp1c3QgcGF0aA0KDQoja25pdHI6Om9wdHNfY2h1bmskc2V0KGVjaG8gPSBUUlVFLCBldmFsID0gRkFMU0UpDQpgYGANCg0KYGBge3IsIGV2YWwgPSBGQUxTRX0NCmRpcl9wYXRoIDwtIGhlcmU6OmhlcmUoInJhd19maWxlcyIpDQpgYGANCg0KTGlzdCBhbGwgZmlsZXMgaW4gdGhlIGRpcmVjdG9yeSBhbmQgZmluZCB0aGUgZmlsZSB0aGF0IGNvbnRhaW5zICJub3ciIG9yICJOT1ciDQoNCg0KYGBge3IsIGV2YWwgPSBGQUxTRX0NCiANCmZpbGVzIDwtIGxpc3QuZmlsZXMoZGlyX3BhdGgsIGZ1bGwubmFtZXMgPSBUUlVFKQ0KDQp0YXJnZXRfZmlsZSA8LSBmaWxlc1tncmVwbCgibm93IiwgZmlsZXMsIGlnbm9yZS5jYXNlID0gVFJVRSldDQpgYGANCg0KQ2hlY2sgaWYgYSBmaWxlIHdhcyBmb3VuZA0KDQpgYGB7ciwgZXZhbCA9IEZBTFNFfQ0KDQppZiAobGVuZ3RoKHRhcmdldF9maWxlKSA9PSAwKSB7DQogIHN0b3AoIk5vIGZpbGUgY29udGFpbmluZyAnbm93JyBvciAnTk9XJyBmb3VuZCBpbiB0aGUgZGlyZWN0b3J5LiIpDQp9IGVsc2UgaWYgKGxlbmd0aCh0YXJnZXRfZmlsZSkgPiAxKSB7DQogIHN0b3AoIk11bHRpcGxlIGZpbGVzIG1hdGNoLiBQbGVhc2Ugc3BlY2lmeSBmdXJ0aGVyLiIpDQp9DQpgYGANCg0KUmVhZCB0aGUgTk9XIGZpbGUgYW5kIGRhdGEgd3JhbmdsaW5nDQoNCmBgYHtyLCBldmFsID0gRkFMU0V9DQpkZiA8LSByZWFkLmRlbGltKHRhcmdldF9maWxlLA0KICAgICAgICAgICAgICAgICBoZWFkZXIgPSBGQUxTRSwgc2VwID0gIlx0IiwgbmEuc3RyaW5ncyA9IGMoIlxcTiIsICItIiksDQogICAgICAgICAgICAgICAgIHJvdy5uYW1lcyA9IE5VTEwpIA0KDQpjb2xuYW1lcyhkZikgPC0gZGZbMSxdDQoNCmRmIDwtIGRmWy0xLF0NCmBgYA0KDQoNCkNyZWF0ZSBhIGRpcmVjdG9yeSB3aGVyZSB0byBzYXZlIHRoZSBOT1cgb3V0cHV0DQoNCmBgYHtyLCBldmFsID0gRkFMU0V9DQpkaXIgPC0gIk5PV19vdXRwdXQiDQppZiAoIWRpci5leGlzdHMoZGlyKSkgew0KICBkaXIuY3JlYXRlKGRpcikNCn0NCmBgYA0KDQpOYW1pbmcgdGhlIE5PVyBmaWxlIGFuZCBzYXZpbmcgaXQgYXMgY3N2IGZvcm1hdA0KDQpgYGB7ciwgZXZhbCA9IEZBTFNFfQ0Kb3V0cHV0X2ZpbGUgPC0gcGFzdGUwKGRpciwgIi9ub3dfY2xlYW5lZC5jc3YiKQ0KDQp3cml0ZS5jc3YoZGYsIGZpbGUgPSBvdXRwdXRfZmlsZSkNCmBgYA0KDQo=</div>
 
 
 </div>
@@ -621,7 +558,7 @@ $(document).ready(function () {
 <!-- code folding -->
 <script>
 $(document).ready(function () {
-  window.initializeSourceEmbed("mod2_rotina_taxonomica.Rmd");
+  window.initializeSourceEmbed("mod1_read_wrangle_now_raw.Rmd");
 });
 </script>
 
