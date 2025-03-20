@@ -1,6 +1,6 @@
 ---
 title: "Rotina download e processamento"
-author: "Gabriel Nakamura"
+author: "Lucas Porto"
 date: "2025-03-19"
 output: html_document
 ---
@@ -31,9 +31,7 @@ data_now <- read_excel(here::here("data", "now_data.xlsx"))
 
 ```{r}
 source(here::here("R_functions", "Lucas - Only_functions.R"))
-
-
-#########################################################################################################
+```
 
 
 # Clean PBDB dataset 
@@ -52,18 +50,16 @@ head(filtered_data_pbdb)
 ## Define the vector with the names of the columns to keep
 selected_columns_now = c("LIDNUM", "SPECIES", "MAX_AGE", "MIN_AGE", "GENUS", "FAMILY", "LONG", "LAT")  
 
+```{r}
 filtered_data_now = filter_columns(data_now, selected_columns_now)
-
 ## Display the first rows of the filtered dataset
 head(filtered_data_now)
-
-
-#########################################################################################################
+```
 
 
 # Standardize column names between the two datasets
 
-
+```{r}
 ## First, we should include the "_" between species name in the PBDB dataset 
 filtered_data_pbdb
 
@@ -83,12 +79,11 @@ filtered_data_now = filtered_data_now %>%
 
 head(filtered_data_now)
 
-
-#########################################################################################################
+```
 
 
 # Now we will change the column names to match between databases and to be compatible to the objects that will be created  
-
+```{r}
 ## PBDB
 filtered_data_pbdb = filtered_data_pbdb %>%
   dplyr::rename("Site" = collection_no, 
@@ -120,15 +115,15 @@ filtered_data_now = filtered_data_now %>% # Adjust the position of columns
   dplyr::select(Species, MaxT, MinT, lng, lat, Site, Family)
 
 
-
-#########################################################################################################
-
+```
 
 # Now we will clean and organize the data based on their temporal resolution
 
 ## Dealing with occurrence resolution
 
 ###Looking at our data, we can see that it has much variation in time resolution Resolution = the timespan between each occurrence for a species - High variation could point to more uncertainty
+
+```{r}
 
 pbdb = search.site(data = filtered_data_pbdb)
 now = search.site(data = filtered_data_now)
@@ -138,11 +133,13 @@ now$Site=now$Site+max(pbdb$Site)
 now$MaxT=as.numeric(now$MaxT)
 now$MinT=as.numeric(now$MinT)
 
-
-#########################################################################################################
-
+```
 
 # Clean datasets
+
+
+
+```{r}
 
 ## PBDB
 ### Run the filter_resolution_and_plot function to PBDB dataset and using the temporal threshold of 5 Myr
@@ -160,10 +157,12 @@ now_with_flags = filter_resolution_and_plot(now, 5)
 now = now_with_flags %>% filter(Resolution_flag == FALSE)
 
 
-#########################################################################################################
+```
+
 
 # Check the resolutions that were removed, how much time they differ from the defined threshold 
 
+```{r}
 ## PBDB
 ### Create a plot to show the time difference (in Myr) between the removed occurence and the threshold 
 excess_counts_table_pbdb <- plot_excess_resolution_and_counts(pbdb_with_flags, threshold = 5)
@@ -192,11 +191,12 @@ species_table_excess_now <- get_species_vectors_by_excess_interval (now_with_fla
 print(species_table_excess_now)
 
 
-#########################################################################################################
+```
 
 
 # Now we will choose, depending from region, which database is going to be reduced due to pseudoreplicas
 
+```{r}
 ## Standardizing region names
 region <- tolower("North America")  # Convert to lowercase (e.g. "North America")
 
@@ -214,11 +214,13 @@ if (!is.null(region)) {
 }
 
 
-#########################################################################################################
+```
 
 
 # Finding pseudoreplicates
 
+
+```{r}
 PBDB_data = pbdb
 NOW_data = now
 
@@ -244,7 +246,4 @@ if (chosen_df == "NOW") {
   true_occs <- rbind(PBDB_no_pseudo, NOW_data)
 }
 
-
-#########################################################################################################
-
-
+```

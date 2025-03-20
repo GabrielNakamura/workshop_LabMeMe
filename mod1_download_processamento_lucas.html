@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Lucas Porto" />
+
+<meta name="date" content="2025-03-19" />
+
+<title>Rotina download e processamento</title>
+
+<script src="site_libs/header-attrs-2.28/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<script src="site_libs/navigation-1.1/sourceembed.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  background-color: #f8f8f8; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ef2929; } /* Alert */
+code span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #204a87; } /* Attribute */
+code span.bn { color: #0000cf; } /* BaseN */
+code span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4e9a06; } /* Char */
+code span.cn { color: #8f5902; } /* Constant */
+code span.co { color: #8f5902; font-style: italic; } /* Comment */
+code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+code span.dt { color: #204a87; } /* DataType */
+code span.dv { color: #0000cf; } /* DecVal */
+code span.er { color: #a40000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #0000cf; } /* Float */
+code span.fu { color: #204a87; font-weight: bold; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+code span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+code span.ot { color: #8f5902; } /* Other */
+code span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+code span.sc { color: #ce5c00; font-weight: bold; } /* SpecialChar */
+code span.ss { color: #4e9a06; } /* SpecialString */
+code span.st { color: #4e9a06; } /* String */
+code span.va { color: #000000; } /* Variable */
+code span.vs { color: #4e9a06; } /* VerbatimString */
+code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+<style type="text/css">
+#rmd-source-code {
+  display: none;
+}
+</style>
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Workshop LabMeMe - processamento de dados a partir de registros fósseis</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Introdução</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Módulo 1 - download e processamento de dados de ocorrência
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="mod1_clean_pbdb_raw.html">Leitura e limpeza dos dados PBDB</a>
+    </li>
+    <li>
+      <a href="mod1_download_processamento_lucas.html">Limpeza, organização e filtragem de dados</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Módulo 2 - harmonização taxonômica
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="mod2_processameto_backbone_taxonomico.html">Processamento backbone taxonomico</a>
+    </li>
+    <li>
+      <a href="rotina_taxonomica.html">Checagem taxonômica</a>
+    </li>
+    <li>
+      <a href="mod2_taxonomias.html">Harmonização com diferentes taxonomias</a>
+    </li>
+  </ul>
+</li>
+<li>
+  <a href="mod3_output.html">Módulo 3 - output de dados</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-download-source" href="#">Download Rmd</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Rotina download e processamento</h1>
+<h4 class="author">Lucas Porto</h4>
+<h4 class="date">2025-03-19</h4>
+
+</div>
+
+
+<div id="download-of-the-databases-that-will-be-used"
+class="section level1">
+<h1>Download of the databases that will be used</h1>
+<p>Here you have to include your own databases. Here, just for an
+example, we will use standard PBDB and NOW databases Both databases are
+from their respective websites and are based on Carnivora records</p>
+<div id="pbdb" class="section level2">
+<h2>PBDB</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>data_pbdb <span class="ot">&lt;-</span> <span class="fu">read_delim</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;pbdb_data.csv&quot;</span>), <span class="at">delim =</span> <span class="st">&quot;;&quot;</span>, <span class="at">col_types =</span> <span class="fu">cols</span>(<span class="at">.default =</span> <span class="st">&quot;?&quot;</span>),<span class="at">name_repair =</span> <span class="st">&quot;minimal&quot;</span>)</span></code></pre></div>
+</div>
+<div id="now" class="section level2">
+<h2>NOW</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>data_now <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;now_data.xlsx&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;R_functions&quot;</span>, <span class="st">&quot;Lucas - Only_functions.R&quot;</span>))</span></code></pre></div>
+</div>
+</div>
+<div id="clean-pbdb-dataset" class="section level1">
+<h1>Clean PBDB dataset</h1>
+<div id="define-the-vector-with-the-names-of-the-columns-to-keep"
+class="section level2">
+<h2>Define the vector with the names of the columns to keep</h2>
+<p>selected_columns_pbdb = c(“collection_no”, “accepted_name”, “max_ma”,
+“min_ma”, “family”, “lng”, “lat”)</p>
+<p>filtered_data_pbdb = filter_columns(data_pbdb,
+selected_columns_pbdb)</p>
+</div>
+<div id="display-the-first-rows-of-the-filtered-dataset"
+class="section level2">
+<h2>Display the first rows of the filtered dataset</h2>
+<p>head(filtered_data_pbdb)</p>
+</div>
+</div>
+<div id="clean-now-dataset" class="section level1">
+<h1>Clean NOW dataset</h1>
+<div id="define-the-vector-with-the-names-of-the-columns-to-keep-1"
+class="section level2">
+<h2>Define the vector with the names of the columns to keep</h2>
+<p>selected_columns_now = c(“LIDNUM”, “SPECIES”, “MAX_AGE”, “MIN_AGE”,
+“GENUS”, “FAMILY”, “LONG”, “LAT”)</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>filtered_data_now <span class="ot">=</span> <span class="fu">filter_columns</span>(data_now, selected_columns_now)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="do">## Display the first rows of the filtered dataset</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">head</span>(filtered_data_now)</span></code></pre></div>
+</div>
+</div>
+<div id="standardize-column-names-between-the-two-datasets"
+class="section level1">
+<h1>Standardize column names between the two datasets</h1>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="do">## First, we should include the &quot;_&quot; between species name in the PBDB dataset </span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>filtered_data_pbdb</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="cf">if</span> (<span class="st">&quot;accepted_name&quot;</span> <span class="sc">%in%</span> <span class="fu">colnames</span>(filtered_data_pbdb)) {</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  filtered_data_pbdb<span class="sc">$</span>accepted_name <span class="ot">=</span> <span class="fu">gsub</span>(<span class="st">&quot; &quot;</span>, <span class="st">&quot;_&quot;</span>, filtered_data_pbdb<span class="sc">$</span>accepted_name)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>}</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>filtered_data_pbdb</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="do">## Then, we should merge the column names of the &quot;SPECIES&quot; and &quot;GENUS&quot; names in the NOW database</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>filtered_data_now</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>filtered_data_now <span class="ot">=</span> filtered_data_now <span class="sc">%&gt;%</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">SPECIES_NAMES =</span> <span class="fu">paste</span>(GENUS, SPECIES, <span class="at">sep =</span> <span class="st">&quot;_&quot;</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>GENUS, <span class="sc">-</span>SPECIES)  <span class="co"># Remove the original columns</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="fu">head</span>(filtered_data_now)</span></code></pre></div>
+</div>
+<div
+id="now-we-will-change-the-column-names-to-match-between-databases-and-to-be-compatible-to-the-objects-that-will-be-created"
+class="section level1">
+<h1>Now we will change the column names to match between databases and
+to be compatible to the objects that will be created</h1>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="do">## PBDB</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>filtered_data_pbdb <span class="ot">=</span> filtered_data_pbdb <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">rename</span>(<span class="st">&quot;Site&quot;</span> <span class="ot">=</span> collection_no, </span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>                <span class="st">&quot;Species&quot;</span> <span class="ot">=</span> accepted_name,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>                <span class="st">&quot;MaxT&quot;</span> <span class="ot">=</span> max_ma,</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>                <span class="st">&quot;MinT&quot;</span> <span class="ot">=</span> min_ma,</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>                <span class="st">&quot;Family&quot;</span> <span class="ot">=</span> family,</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>                <span class="st">&quot;lng&quot;</span> <span class="ot">=</span> lng,</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>                <span class="st">&quot;lat&quot;</span> <span class="ot">=</span> lat)  </span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>filtered_data_pbdb <span class="ot">=</span> filtered_data_pbdb <span class="sc">%&gt;%</span> <span class="co"># Adjust the position of columns</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(Species, MaxT, MinT, lng, lat, Site, Family)</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>filtered_data_pbdb <span class="ot">=</span> filtered_data_pbdb <span class="sc">%&gt;%</span> <span class="co"># Remove lines that are not identified at family level </span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(Family <span class="sc">!=</span> <span class="st">&quot;NO_FAMILY_SPECIFIED&quot;</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="do">## NOW</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a>filtered_data_now <span class="ot">=</span> filtered_data_now <span class="sc">%&gt;%</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">rename</span>(<span class="st">&quot;Site&quot;</span> <span class="ot">=</span> LIDNUM , </span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a>         <span class="st">&quot;Species&quot;</span> <span class="ot">=</span> SPECIES_NAMES,</span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a>         <span class="st">&quot;MaxT&quot;</span> <span class="ot">=</span> MAX_AGE,</span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a>         <span class="st">&quot;MinT&quot;</span> <span class="ot">=</span> MIN_AGE,</span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a>         <span class="st">&quot;Family&quot;</span> <span class="ot">=</span> FAMILY,</span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a>         <span class="st">&quot;lng&quot;</span> <span class="ot">=</span> LONG,</span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a>         <span class="st">&quot;lat&quot;</span> <span class="ot">=</span> LAT)  </span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a>filtered_data_now <span class="ot">=</span> filtered_data_now <span class="sc">%&gt;%</span> <span class="co"># Adjust the position of columns</span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(Species, MaxT, MinT, lng, lat, Site, Family)</span></code></pre></div>
+</div>
+<div
+id="now-we-will-clean-and-organize-the-data-based-on-their-temporal-resolution"
+class="section level1">
+<h1>Now we will clean and organize the data based on their temporal
+resolution</h1>
+<div id="dealing-with-occurrence-resolution" class="section level2">
+<h2>Dealing with occurrence resolution</h2>
+<p>###Looking at our data, we can see that it has much variation in time
+resolution Resolution = the timespan between each occurrence for a
+species - High variation could point to more uncertainty</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>pbdb <span class="ot">=</span> <span class="fu">search.site</span>(<span class="at">data =</span> filtered_data_pbdb)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>now <span class="ot">=</span> <span class="fu">search.site</span>(<span class="at">data =</span> filtered_data_now)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="do">## A little corrections for the sites in the NOW database:</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>now<span class="sc">$</span>Site<span class="ot">=</span>now<span class="sc">$</span>Site<span class="sc">+</span><span class="fu">max</span>(pbdb<span class="sc">$</span>Site)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>now<span class="sc">$</span>MaxT<span class="ot">=</span><span class="fu">as.numeric</span>(now<span class="sc">$</span>MaxT)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>now<span class="sc">$</span>MinT<span class="ot">=</span><span class="fu">as.numeric</span>(now<span class="sc">$</span>MinT)</span></code></pre></div>
+</div>
+</div>
+<div id="clean-datasets" class="section level1">
+<h1>Clean datasets</h1>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="do">## PBDB</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="do">### Run the filter_resolution_and_plot function to PBDB dataset and using the temporal threshold of 5 Myr</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>pbdb_with_flags <span class="ot">=</span> <span class="fu">filter_resolution_and_plot</span>(pbdb, <span class="dv">5</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="do">### Let&#39;s now create a new dataset removing the occurecences with flags (&gt;= our threshold)</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>pbdb <span class="ot">=</span> pbdb_with_flags <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Resolution_flag <span class="sc">==</span> <span class="cn">FALSE</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="do">## NOW</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="do">### Run the filter_resolution_and_plot function to NOW dataset and using the temporal threshold of 5 Myr</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>now_with_flags <span class="ot">=</span> <span class="fu">filter_resolution_and_plot</span>(now, <span class="dv">5</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="do">### Let&#39;s now create a new dataset removing the occurecences with flags (&gt;= our threshold)</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>now <span class="ot">=</span> now_with_flags <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Resolution_flag <span class="sc">==</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+</div>
+<div
+id="check-the-resolutions-that-were-removed-how-much-time-they-differ-from-the-defined-threshold"
+class="section level1">
+<h1>Check the resolutions that were removed, how much time they differ
+from the defined threshold</h1>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="do">## PBDB</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="do">### Create a plot to show the time difference (in Myr) between the removed occurence and the threshold </span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>excess_counts_table_pbdb <span class="ot">&lt;-</span> <span class="fu">plot_excess_resolution_and_counts</span>(pbdb_with_flags, <span class="at">threshold =</span> <span class="dv">5</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="do">### Check the number of record within each category </span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">print</span>(excess_counts_table_pbdb)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="do">## NOW</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="do">### Create a plot to show the time difference (in Myr) between the removed occurence and the threshold </span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>excess_counts_table_now <span class="ot">&lt;-</span> <span class="fu">plot_excess_resolution_and_counts</span>(now_with_flags, <span class="at">threshold =</span> <span class="dv">5</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="do">### Check the number of record within each category </span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="fu">print</span>(excess_counts_table_now)</span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co"># We can also see how many species, and who are they, based on the records with flags. And we can organize them within the defined windows. </span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="do">## PBDB</span></span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a>species_table_excess_pbdb <span class="ot">&lt;-</span> <span class="fu">get_species_vectors_by_excess_interval</span> (pbdb_with_flags, <span class="at">threshold =</span> <span class="dv">5</span>)</span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="fu">print</span>(species_table_excess_pbdb)</span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="do">## NOW</span></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a>species_table_excess_now <span class="ot">&lt;-</span> <span class="fu">get_species_vectors_by_excess_interval</span> (now_with_flags, <span class="at">threshold =</span> <span class="dv">5</span>)</span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="fu">print</span>(species_table_excess_now)</span></code></pre></div>
+</div>
+<div
+id="now-we-will-choose-depending-from-region-which-database-is-going-to-be-reduced-due-to-pseudoreplicas"
+class="section level1">
+<h1>Now we will choose, depending from region, which database is going
+to be reduced due to pseudoreplicas</h1>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="do">## Standardizing region names</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>region <span class="ot">&lt;-</span> <span class="fu">tolower</span>(<span class="st">&quot;North America&quot;</span>)  <span class="co"># Convert to lowercase (e.g. &quot;North America&quot;)</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(region)) {</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="cf">if</span> (region <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;na&quot;</span>, <span class="st">&quot;north america&quot;</span>)) {</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>    chosen_df <span class="ot">&lt;-</span> <span class="st">&quot;NOW&quot;</span> <span class="co">#if user elects North America the PBDB is a better database</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (region <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;eu&quot;</span>, <span class="st">&quot;ea&quot;</span>, <span class="st">&quot;eurasia&quot;</span>, <span class="st">&quot;europe&quot;</span>)) {</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>    chosen_df <span class="ot">&lt;-</span> <span class="st">&quot;PBDB&quot;</span> <span class="co">#if user selects Eurasia the NOW is a better database</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>    <span class="fu">warning</span>(<span class="st">&quot;Invalid region specified. Defaulting to NOW.&quot;</span>)</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>    chosen_df <span class="ot">&lt;-</span> <span class="st">&quot;NOW&quot;</span> <span class="co"># Default</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>  }</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  chosen_df <span class="ot">&lt;-</span> <span class="st">&quot;NOW&quot;</span>  <span class="co"># Default case</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<div id="finding-pseudoreplicates" class="section level1">
+<h1>Finding pseudoreplicates</h1>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>PBDB_data <span class="ot">=</span> pbdb</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>NOW_data <span class="ot">=</span> now</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>PBDB_data <span class="ot">&lt;-</span> PBDB_data <span class="sc">%&gt;%</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(MaxT, MinT, lng, lat), as.numeric))</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>NOW_data <span class="ot">&lt;-</span> NOW_data <span class="sc">%&gt;%</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(MaxT, MinT, lng, lat), as.numeric))</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="do">## Running the function</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>PR <span class="ot">&lt;-</span> <span class="fu">find.pseudoreplicas</span>(<span class="at">dtst1 =</span> PBDB_data, <span class="at">dtst2 =</span> NOW_data,</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>                          <span class="at">lat_threshold =</span> <span class="dv">1</span>, <span class="at">long_threshold =</span> <span class="dv">1</span>,</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>                          <span class="at">time_threshold =</span> <span class="dv">6</span>, <span class="at">print_progress =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="do">## Removing pseudoreplicates based on chosen dataset</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="cf">if</span> (chosen_df <span class="sc">==</span> <span class="st">&quot;NOW&quot;</span>) {</span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>  NOW_no_pseudo <span class="ot">&lt;-</span> <span class="fu">remove.pseudoreplicas</span>(PR, NOW_data) <span class="sc">%&gt;%</span></span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>    <span class="fu">select</span>(<span class="sc">-</span>LIDNUM)  <span class="co"># Removing LIDNUM column</span></span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a>  true_occs <span class="ot">&lt;-</span> <span class="fu">rbind</span>(PBDB_data, NOW_no_pseudo)</span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a>} <span class="cf">else</span> {  <span class="co"># chosen_df == &quot;PBDB&quot;</span></span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a>  PBDB_no_pseudo <span class="ot">&lt;-</span> <span class="fu">remove.pseudoreplicas</span>(PR, PBDB_data)</span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a>  true_occs <span class="ot">&lt;-</span> <span class="fu">rbind</span>(PBDB_no_pseudo, NOW_data)</span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIlJvdGluYSBkb3dubG9hZCBlIHByb2Nlc3NhbWVudG8iDQphdXRob3I6ICJMdWNhcyBQb3J0byINCmRhdGU6ICIyMDI1LTAzLTE5Ig0Kb3V0cHV0OiBodG1sX2RvY3VtZW50DQotLS0NCg0KYGBge3Igc2V0dXAsIGluY2x1ZGU9RkFMU0V9DQprbml0cjo6b3B0c19jaHVuayRzZXQoZXZhbCA9IEZBTFNFKQ0KYGBgDQogDQojIERvd25sb2FkIG9mIHRoZSBkYXRhYmFzZXMgdGhhdCB3aWxsIGJlIHVzZWQgDQogIA0KSGVyZSB5b3UgaGF2ZSB0byBpbmNsdWRlIHlvdXIgb3duIGRhdGFiYXNlcy4gDQpIZXJlLCBqdXN0IGZvciBhbiBleGFtcGxlLCB3ZSB3aWxsIHVzZSBzdGFuZGFyZCBQQkRCIGFuZCBOT1cgZGF0YWJhc2VzIA0KQm90aCBkYXRhYmFzZXMgYXJlIGZyb20gdGhlaXIgcmVzcGVjdGl2ZSB3ZWJzaXRlcyBhbmQgYXJlIGJhc2VkIG9uIENhcm5pdm9yYSByZWNvcmRzIA0KDQoNCiMjIFBCREINCg0KYGBge3J9DQpkYXRhX3BiZGIgPC0gcmVhZF9kZWxpbShoZXJlOjpoZXJlKCJkYXRhIiwgInBiZGJfZGF0YS5jc3YiKSwgZGVsaW0gPSAiOyIsIGNvbF90eXBlcyA9IGNvbHMoLmRlZmF1bHQgPSAiPyIpLG5hbWVfcmVwYWlyID0gIm1pbmltYWwiKQ0KYGBgDQoNCiMjIE5PVw0KDQpgYGB7cn0NCmRhdGFfbm93IDwtIHJlYWRfZXhjZWwoaGVyZTo6aGVyZSgiZGF0YSIsICJub3dfZGF0YS54bHN4IikpDQpgYGANCg0KDQpgYGB7cn0NCnNvdXJjZShoZXJlOjpoZXJlKCJSX2Z1bmN0aW9ucyIsICJMdWNhcyAtIE9ubHlfZnVuY3Rpb25zLlIiKSkNCmBgYA0KDQoNCiMgQ2xlYW4gUEJEQiBkYXRhc2V0IA0KDQojIyBEZWZpbmUgdGhlIHZlY3RvciB3aXRoIHRoZSBuYW1lcyBvZiB0aGUgY29sdW1ucyB0byBrZWVwDQpzZWxlY3RlZF9jb2x1bW5zX3BiZGIgPSBjKCJjb2xsZWN0aW9uX25vIiwgImFjY2VwdGVkX25hbWUiLCAibWF4X21hIiwgIm1pbl9tYSIsICJmYW1pbHkiLCAibG5nIiwgImxhdCIpICANCg0KZmlsdGVyZWRfZGF0YV9wYmRiID0gZmlsdGVyX2NvbHVtbnMoZGF0YV9wYmRiLCBzZWxlY3RlZF9jb2x1bW5zX3BiZGIpDQoNCiMjIERpc3BsYXkgdGhlIGZpcnN0IHJvd3Mgb2YgdGhlIGZpbHRlcmVkIGRhdGFzZXQNCmhlYWQoZmlsdGVyZWRfZGF0YV9wYmRiKQ0KDQoNCiMgQ2xlYW4gTk9XIGRhdGFzZXQgDQoNCiMjIERlZmluZSB0aGUgdmVjdG9yIHdpdGggdGhlIG5hbWVzIG9mIHRoZSBjb2x1bW5zIHRvIGtlZXANCnNlbGVjdGVkX2NvbHVtbnNfbm93ID0gYygiTElETlVNIiwgIlNQRUNJRVMiLCAiTUFYX0FHRSIsICJNSU5fQUdFIiwgIkdFTlVTIiwgIkZBTUlMWSIsICJMT05HIiwgIkxBVCIpICANCg0KYGBge3J9DQpmaWx0ZXJlZF9kYXRhX25vdyA9IGZpbHRlcl9jb2x1bW5zKGRhdGFfbm93LCBzZWxlY3RlZF9jb2x1bW5zX25vdykNCiMjIERpc3BsYXkgdGhlIGZpcnN0IHJvd3Mgb2YgdGhlIGZpbHRlcmVkIGRhdGFzZXQNCmhlYWQoZmlsdGVyZWRfZGF0YV9ub3cpDQpgYGANCg0KDQojIFN0YW5kYXJkaXplIGNvbHVtbiBuYW1lcyBiZXR3ZWVuIHRoZSB0d28gZGF0YXNldHMNCg0KYGBge3J9DQojIyBGaXJzdCwgd2Ugc2hvdWxkIGluY2x1ZGUgdGhlICJfIiBiZXR3ZWVuIHNwZWNpZXMgbmFtZSBpbiB0aGUgUEJEQiBkYXRhc2V0IA0KZmlsdGVyZWRfZGF0YV9wYmRiDQoNCmlmICgiYWNjZXB0ZWRfbmFtZSIgJWluJSBjb2xuYW1lcyhmaWx0ZXJlZF9kYXRhX3BiZGIpKSB7DQogIGZpbHRlcmVkX2RhdGFfcGJkYiRhY2NlcHRlZF9uYW1lID0gZ3N1YigiICIsICJfIiwgZmlsdGVyZWRfZGF0YV9wYmRiJGFjY2VwdGVkX25hbWUpDQp9DQoNCmZpbHRlcmVkX2RhdGFfcGJkYg0KDQoNCiMjIFRoZW4sIHdlIHNob3VsZCBtZXJnZSB0aGUgY29sdW1uIG5hbWVzIG9mIHRoZSAiU1BFQ0lFUyIgYW5kICJHRU5VUyIgbmFtZXMgaW4gdGhlIE5PVyBkYXRhYmFzZQ0KZmlsdGVyZWRfZGF0YV9ub3cNCg0KZmlsdGVyZWRfZGF0YV9ub3cgPSBmaWx0ZXJlZF9kYXRhX25vdyAlPiUNCiAgbXV0YXRlKFNQRUNJRVNfTkFNRVMgPSBwYXN0ZShHRU5VUywgU1BFQ0lFUywgc2VwID0gIl8iKSkgJT4lDQogIGRwbHlyOjpzZWxlY3QoLUdFTlVTLCAtU1BFQ0lFUykgICMgUmVtb3ZlIHRoZSBvcmlnaW5hbCBjb2x1bW5zDQoNCmhlYWQoZmlsdGVyZWRfZGF0YV9ub3cpDQoNCmBgYA0KDQoNCiMgTm93IHdlIHdpbGwgY2hhbmdlIHRoZSBjb2x1bW4gbmFtZXMgdG8gbWF0Y2ggYmV0d2VlbiBkYXRhYmFzZXMgYW5kIHRvIGJlIGNvbXBhdGlibGUgdG8gdGhlIG9iamVjdHMgdGhhdCB3aWxsIGJlIGNyZWF0ZWQgIA0KYGBge3J9DQojIyBQQkRCDQpmaWx0ZXJlZF9kYXRhX3BiZGIgPSBmaWx0ZXJlZF9kYXRhX3BiZGIgJT4lDQogIGRwbHlyOjpyZW5hbWUoIlNpdGUiID0gY29sbGVjdGlvbl9ubywgDQogICAgICAgICAgICAgICAgIlNwZWNpZXMiID0gYWNjZXB0ZWRfbmFtZSwNCiAgICAgICAgICAgICAgICAiTWF4VCIgPSBtYXhfbWEsDQogICAgICAgICAgICAgICAgIk1pblQiID0gbWluX21hLA0KICAgICAgICAgICAgICAgICJGYW1pbHkiID0gZmFtaWx5LA0KICAgICAgICAgICAgICAgICJsbmciID0gbG5nLA0KICAgICAgICAgICAgICAgICJsYXQiID0gbGF0KSAgDQoNCmZpbHRlcmVkX2RhdGFfcGJkYiA9IGZpbHRlcmVkX2RhdGFfcGJkYiAlPiUgIyBBZGp1c3QgdGhlIHBvc2l0aW9uIG9mIGNvbHVtbnMNCiAgZHBseXI6OnNlbGVjdChTcGVjaWVzLCBNYXhULCBNaW5ULCBsbmcsIGxhdCwgU2l0ZSwgRmFtaWx5KQ0KDQpmaWx0ZXJlZF9kYXRhX3BiZGIgPSBmaWx0ZXJlZF9kYXRhX3BiZGIgJT4lICMgUmVtb3ZlIGxpbmVzIHRoYXQgYXJlIG5vdCBpZGVudGlmaWVkIGF0IGZhbWlseSBsZXZlbCANCiAgZHBseXI6OmZpbHRlcihGYW1pbHkgIT0gIk5PX0ZBTUlMWV9TUEVDSUZJRUQiKQ0KDQoNCiMjIE5PVw0KZmlsdGVyZWRfZGF0YV9ub3cgPSBmaWx0ZXJlZF9kYXRhX25vdyAlPiUNCiAgZHBseXI6OnJlbmFtZSgiU2l0ZSIgPSBMSUROVU0gLCANCiAgICAgICAgICJTcGVjaWVzIiA9IFNQRUNJRVNfTkFNRVMsDQogICAgICAgICAiTWF4VCIgPSBNQVhfQUdFLA0KICAgICAgICAgIk1pblQiID0gTUlOX0FHRSwNCiAgICAgICAgICJGYW1pbHkiID0gRkFNSUxZLA0KICAgICAgICAgImxuZyIgPSBMT05HLA0KICAgICAgICAgImxhdCIgPSBMQVQpICANCg0KZmlsdGVyZWRfZGF0YV9ub3cgPSBmaWx0ZXJlZF9kYXRhX25vdyAlPiUgIyBBZGp1c3QgdGhlIHBvc2l0aW9uIG9mIGNvbHVtbnMNCiAgZHBseXI6OnNlbGVjdChTcGVjaWVzLCBNYXhULCBNaW5ULCBsbmcsIGxhdCwgU2l0ZSwgRmFtaWx5KQ0KDQoNCmBgYA0KDQojIE5vdyB3ZSB3aWxsIGNsZWFuIGFuZCBvcmdhbml6ZSB0aGUgZGF0YSBiYXNlZCBvbiB0aGVpciB0ZW1wb3JhbCByZXNvbHV0aW9uDQoNCiMjIERlYWxpbmcgd2l0aCBvY2N1cnJlbmNlIHJlc29sdXRpb24NCg0KIyMjTG9va2luZyBhdCBvdXIgZGF0YSwgd2UgY2FuIHNlZSB0aGF0IGl0IGhhcyBtdWNoIHZhcmlhdGlvbiBpbiB0aW1lIHJlc29sdXRpb24gUmVzb2x1dGlvbiA9IHRoZSB0aW1lc3BhbiBiZXR3ZWVuIGVhY2ggb2NjdXJyZW5jZSBmb3IgYSBzcGVjaWVzIC0gSGlnaCB2YXJpYXRpb24gY291bGQgcG9pbnQgdG8gbW9yZSB1bmNlcnRhaW50eQ0KDQpgYGB7cn0NCg0KcGJkYiA9IHNlYXJjaC5zaXRlKGRhdGEgPSBmaWx0ZXJlZF9kYXRhX3BiZGIpDQpub3cgPSBzZWFyY2guc2l0ZShkYXRhID0gZmlsdGVyZWRfZGF0YV9ub3cpDQoNCiMjIEEgbGl0dGxlIGNvcnJlY3Rpb25zIGZvciB0aGUgc2l0ZXMgaW4gdGhlIE5PVyBkYXRhYmFzZToNCm5vdyRTaXRlPW5vdyRTaXRlK21heChwYmRiJFNpdGUpDQpub3ckTWF4VD1hcy5udW1lcmljKG5vdyRNYXhUKQ0Kbm93JE1pblQ9YXMubnVtZXJpYyhub3ckTWluVCkNCg0KYGBgDQoNCiMgQ2xlYW4gZGF0YXNldHMNCg0KDQoNCmBgYHtyfQ0KDQojIyBQQkRCDQojIyMgUnVuIHRoZSBmaWx0ZXJfcmVzb2x1dGlvbl9hbmRfcGxvdCBmdW5jdGlvbiB0byBQQkRCIGRhdGFzZXQgYW5kIHVzaW5nIHRoZSB0ZW1wb3JhbCB0aHJlc2hvbGQgb2YgNSBNeXINCnBiZGJfd2l0aF9mbGFncyA9IGZpbHRlcl9yZXNvbHV0aW9uX2FuZF9wbG90KHBiZGIsIDUpDQoNCiMjIyBMZXQncyBub3cgY3JlYXRlIGEgbmV3IGRhdGFzZXQgcmVtb3ZpbmcgdGhlIG9jY3VyZWNlbmNlcyB3aXRoIGZsYWdzICg+PSBvdXIgdGhyZXNob2xkKQ0KcGJkYiA9IHBiZGJfd2l0aF9mbGFncyAlPiUgZmlsdGVyKFJlc29sdXRpb25fZmxhZyA9PSBGQUxTRSkNCg0KDQojIyBOT1cNCiMjIyBSdW4gdGhlIGZpbHRlcl9yZXNvbHV0aW9uX2FuZF9wbG90IGZ1bmN0aW9uIHRvIE5PVyBkYXRhc2V0IGFuZCB1c2luZyB0aGUgdGVtcG9yYWwgdGhyZXNob2xkIG9mIDUgTXlyDQpub3dfd2l0aF9mbGFncyA9IGZpbHRlcl9yZXNvbHV0aW9uX2FuZF9wbG90KG5vdywgNSkNCg0KIyMjIExldCdzIG5vdyBjcmVhdGUgYSBuZXcgZGF0YXNldCByZW1vdmluZyB0aGUgb2NjdXJlY2VuY2VzIHdpdGggZmxhZ3MgKD49IG91ciB0aHJlc2hvbGQpDQpub3cgPSBub3dfd2l0aF9mbGFncyAlPiUgZmlsdGVyKFJlc29sdXRpb25fZmxhZyA9PSBGQUxTRSkNCg0KDQpgYGANCg0KDQojIENoZWNrIHRoZSByZXNvbHV0aW9ucyB0aGF0IHdlcmUgcmVtb3ZlZCwgaG93IG11Y2ggdGltZSB0aGV5IGRpZmZlciBmcm9tIHRoZSBkZWZpbmVkIHRocmVzaG9sZCANCg0KYGBge3J9DQojIyBQQkRCDQojIyMgQ3JlYXRlIGEgcGxvdCB0byBzaG93IHRoZSB0aW1lIGRpZmZlcmVuY2UgKGluIE15cikgYmV0d2VlbiB0aGUgcmVtb3ZlZCBvY2N1cmVuY2UgYW5kIHRoZSB0aHJlc2hvbGQgDQpleGNlc3NfY291bnRzX3RhYmxlX3BiZGIgPC0gcGxvdF9leGNlc3NfcmVzb2x1dGlvbl9hbmRfY291bnRzKHBiZGJfd2l0aF9mbGFncywgdGhyZXNob2xkID0gNSkNCg0KIyMjIENoZWNrIHRoZSBudW1iZXIgb2YgcmVjb3JkIHdpdGhpbiBlYWNoIGNhdGVnb3J5IA0KcHJpbnQoZXhjZXNzX2NvdW50c190YWJsZV9wYmRiKQ0KDQoNCiMjIE5PVw0KIyMjIENyZWF0ZSBhIHBsb3QgdG8gc2hvdyB0aGUgdGltZSBkaWZmZXJlbmNlIChpbiBNeXIpIGJldHdlZW4gdGhlIHJlbW92ZWQgb2NjdXJlbmNlIGFuZCB0aGUgdGhyZXNob2xkIA0KZXhjZXNzX2NvdW50c190YWJsZV9ub3cgPC0gcGxvdF9leGNlc3NfcmVzb2x1dGlvbl9hbmRfY291bnRzKG5vd193aXRoX2ZsYWdzLCB0aHJlc2hvbGQgPSA1KQ0KDQojIyMgQ2hlY2sgdGhlIG51bWJlciBvZiByZWNvcmQgd2l0aGluIGVhY2ggY2F0ZWdvcnkgDQpwcmludChleGNlc3NfY291bnRzX3RhYmxlX25vdykNCg0KDQoNCiMgV2UgY2FuIGFsc28gc2VlIGhvdyBtYW55IHNwZWNpZXMsIGFuZCB3aG8gYXJlIHRoZXksIGJhc2VkIG9uIHRoZSByZWNvcmRzIHdpdGggZmxhZ3MuIEFuZCB3ZSBjYW4gb3JnYW5pemUgdGhlbSB3aXRoaW4gdGhlIGRlZmluZWQgd2luZG93cy4gDQoNCiMjIFBCREINCnNwZWNpZXNfdGFibGVfZXhjZXNzX3BiZGIgPC0gZ2V0X3NwZWNpZXNfdmVjdG9yc19ieV9leGNlc3NfaW50ZXJ2YWwgKHBiZGJfd2l0aF9mbGFncywgdGhyZXNob2xkID0gNSkNCnByaW50KHNwZWNpZXNfdGFibGVfZXhjZXNzX3BiZGIpDQoNCiMjIE5PVw0Kc3BlY2llc190YWJsZV9leGNlc3Nfbm93IDwtIGdldF9zcGVjaWVzX3ZlY3RvcnNfYnlfZXhjZXNzX2ludGVydmFsIChub3dfd2l0aF9mbGFncywgdGhyZXNob2xkID0gNSkNCnByaW50KHNwZWNpZXNfdGFibGVfZXhjZXNzX25vdykNCg0KDQpgYGANCg0KDQojIE5vdyB3ZSB3aWxsIGNob29zZSwgZGVwZW5kaW5nIGZyb20gcmVnaW9uLCB3aGljaCBkYXRhYmFzZSBpcyBnb2luZyB0byBiZSByZWR1Y2VkIGR1ZSB0byBwc2V1ZG9yZXBsaWNhcw0KDQpgYGB7cn0NCiMjIFN0YW5kYXJkaXppbmcgcmVnaW9uIG5hbWVzDQpyZWdpb24gPC0gdG9sb3dlcigiTm9ydGggQW1lcmljYSIpICAjIENvbnZlcnQgdG8gbG93ZXJjYXNlIChlLmcuICJOb3J0aCBBbWVyaWNhIikNCg0KaWYgKCFpcy5udWxsKHJlZ2lvbikpIHsNCiAgaWYgKHJlZ2lvbiAlaW4lIGMoIm5hIiwgIm5vcnRoIGFtZXJpY2EiKSkgew0KICAgIGNob3Nlbl9kZiA8LSAiTk9XIiAjaWYgdXNlciBlbGVjdHMgTm9ydGggQW1lcmljYSB0aGUgUEJEQiBpcyBhIGJldHRlciBkYXRhYmFzZQ0KICB9IGVsc2UgaWYgKHJlZ2lvbiAlaW4lIGMoImV1IiwgImVhIiwgImV1cmFzaWEiLCAiZXVyb3BlIikpIHsNCiAgICBjaG9zZW5fZGYgPC0gIlBCREIiICNpZiB1c2VyIHNlbGVjdHMgRXVyYXNpYSB0aGUgTk9XIGlzIGEgYmV0dGVyIGRhdGFiYXNlDQogIH0gZWxzZSB7DQogICAgd2FybmluZygiSW52YWxpZCByZWdpb24gc3BlY2lmaWVkLiBEZWZhdWx0aW5nIHRvIE5PVy4iKQ0KICAgIGNob3Nlbl9kZiA8LSAiTk9XIiAjIERlZmF1bHQNCiAgfQ0KfSBlbHNlIHsNCiAgY2hvc2VuX2RmIDwtICJOT1ciICAjIERlZmF1bHQgY2FzZQ0KfQ0KDQoNCmBgYA0KDQoNCiMgRmluZGluZyBwc2V1ZG9yZXBsaWNhdGVzDQoNCg0KYGBge3J9DQpQQkRCX2RhdGEgPSBwYmRiDQpOT1dfZGF0YSA9IG5vdw0KDQoNClBCREJfZGF0YSA8LSBQQkRCX2RhdGEgJT4lDQogIGRwbHlyOjptdXRhdGUoYWNyb3NzKGMoTWF4VCwgTWluVCwgbG5nLCBsYXQpLCBhcy5udW1lcmljKSkNCg0KTk9XX2RhdGEgPC0gTk9XX2RhdGEgJT4lDQogIGRwbHlyOjptdXRhdGUoYWNyb3NzKGMoTWF4VCwgTWluVCwgbG5nLCBsYXQpLCBhcy5udW1lcmljKSkNCg0KIyMgUnVubmluZyB0aGUgZnVuY3Rpb24NClBSIDwtIGZpbmQucHNldWRvcmVwbGljYXMoZHRzdDEgPSBQQkRCX2RhdGEsIGR0c3QyID0gTk9XX2RhdGEsDQogICAgICAgICAgICAgICAgICAgICAgICAgIGxhdF90aHJlc2hvbGQgPSAxLCBsb25nX3RocmVzaG9sZCA9IDEsDQogICAgICAgICAgICAgICAgICAgICAgICAgIHRpbWVfdGhyZXNob2xkID0gNiwgcHJpbnRfcHJvZ3Jlc3MgPSBUUlVFKQ0KDQojIyBSZW1vdmluZyBwc2V1ZG9yZXBsaWNhdGVzIGJhc2VkIG9uIGNob3NlbiBkYXRhc2V0DQppZiAoY2hvc2VuX2RmID09ICJOT1ciKSB7DQogIE5PV19ub19wc2V1ZG8gPC0gcmVtb3ZlLnBzZXVkb3JlcGxpY2FzKFBSLCBOT1dfZGF0YSkgJT4lDQogICAgc2VsZWN0KC1MSUROVU0pICAjIFJlbW92aW5nIExJRE5VTSBjb2x1bW4NCiAgdHJ1ZV9vY2NzIDwtIHJiaW5kKFBCREJfZGF0YSwgTk9XX25vX3BzZXVkbykNCn0gZWxzZSB7ICAjIGNob3Nlbl9kZiA9PSAiUEJEQiINCiAgUEJEQl9ub19wc2V1ZG8gPC0gcmVtb3ZlLnBzZXVkb3JlcGxpY2FzKFBSLCBQQkRCX2RhdGEpDQogIHRydWVfb2NjcyA8LSByYmluZChQQkRCX25vX3BzZXVkbywgTk9XX2RhdGEpDQp9DQoNCmBgYA0K</div>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeSourceEmbed("mod1_download_processamento_lucas.Rmd");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
