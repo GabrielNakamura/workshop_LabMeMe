@@ -1,0 +1,58 @@
+---
+title: "Comparação de taxonomias"
+author: "Gabriel Nakamura"
+date: "2025-03-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+# Lendo taxonomias 
+
+```{r}
+df_tax_pbdb <-
+  read.csv(here::here("data", "processed", "pbdb_backbone_carn_250308.csv"), sep = ",")
+
+df_tax_faurby <- read.csv(here::here("data", "processed", "data_faurby.csv"), sep = ";")
+```
+
+# Processando bases taxonomicas 
+
+```{r}
+df_tax_faurby2 <- 
+  df_tax_faurby |> 
+  mutate(genus_species = paste(Genus, Species, sep = "_"), genus_species2 = paste(Original_Genus, Original_Species, sep = "_"))
+
+
+df_tax_faurby3 <- 
+  df_tax_faurby2 |> 
+  rename(now_family = Family, 
+         now_accepted_genus = Genus, 
+         now_accepted_species = Species, 
+         now_accepted_genus_species = genus_species,
+         now_taxon_genus_species = genus_species2,
+         now_taxon_genus = Original_Genus, 
+         now_taxon_species = Original_Species)
+
+df_tax_faurby4 <- 
+  df_tax_faurby3 |> 
+  select(now_accepted_genus_species, now_taxon_genus_species)
+
+df_tax_faurby5 <- 
+  df_tax_faurby4 |> 
+  distinct(now_accepted_genus_species, .keep_all = TRUE) 
+
+
+```
+
+```{r}
+df_consensus <- 
+  df_tax_pbdb[match(df_tax_faurby5$now_accepted_genus_species, df_tax_pbdb$pbdb_accepted_name)[!is.na(match(df_tax_faurby5$now_accepted_genus_species, df_tax_pbdb$pbdb_accepted_name))], ]
+
+df_no_match <- 
+  df_tax_pbdb[-match(df_tax_faurby5$now_accepted_genus_species, df_tax_pbdb$pbdb_accepted_name)[!is.na(match(df_tax_faurby5$now_accepted_genus_species, df_tax_pbdb$pbdb_accepted_name))], ]
+
+```
+

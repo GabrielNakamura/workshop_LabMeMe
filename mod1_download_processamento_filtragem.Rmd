@@ -1,0 +1,270 @@
+---
+title: "Rotina download e processamento"
+author: "Gabriel Nakamura"
+date: "2025-03-19"
+output: html_document
+---
+
+ 
+# Download of the databases that will be used 
+  
+Here you have to include your own databases. 
+Here, just for an example, we will use standard PBDB and NOW databases 
+Both databases are from their respective websites and are based on Carnivora records 
+
+
+```{r}
+# Needed functions
+
+source(here::here("R_functions", "Lucas & Carlos - functions.R"))
+```
+
+## PBDB
+
+```{r}
+data_pbdb <- read_delim(here::here("data","pbdb_data.csv"), delim = ";", col_types = cols(.default = "?"),name_repair = "minimal")
+```
+
+## NOW
+
+```{r}
+data_now <- read_delim(here::here("data", "now_data.xlsx"), delim = ";", col_types = cols(.default = "?"),name_repair = "minimal")
+```
+
+
+# Clean PBDB dataset 
+
+```{r}
+## Define the vector with the names of the columns to keep
+
+selected_columns_pbdb = c("collection_no", "accepted_name", "max_ma", "min_ma", "family", "lng", "lat")  
+
+filtered_data_pbdb = filter_columns(data_pbdb, selected_columns_pbdb)
+
+## Display the first rows of the filtered dataset
+
+head(filtered_data_pbdb)
+```
+
+
+# Clean NOW dataset 
+
+```{r}
+## Define the vector with the names of the columns to keep
+
+selected_columns_now = c("LIDNUM", "SPECIES", "MAX_AGE", "MIN_AGE", "GENUS", "FAMILY", "LONG", "LAT")  
+
+filtered_data_now = filter_columns(data_now, selected_columns_now)
+
+## Display the first rows of the filtered dataset
+
+head(filtered_data_now)
+```
+
+
+# Standardize column names between the two datasets
+
+```{r}
+## First, we should include the "_" between species name in the PBDB dataset 
+
+filtered_data_pbdb
+
+if ("accepted_name" %in% colnames(filtered_data_pbdb)) {
+  filtered_data_pbdb$accepted_name = gsub(" ", "_", filtered_data_pbdb$accepted_name)
+}
+
+filtered_data_pbdb
+
+
+## Then, we should merge the column names of the "SPECIES" and "GENUS" names in the NOW database
+
+filtered_data_now
+
+filtered_data_now = filtered_data_now %>%
+  mutate(SPECIES_NAMES = paste(GENUS, SPECIES, sep = "_")) %>%
+  dplyr::select(-GENUS, -SPECIES)  # Remove the original columns
+
+head(filtered_data_now)
+
+
+
+## Now we will change the column names to match between databases and to be compatible to the objects that will be created  
+
+### PBDB
+
+filtered_data_pbdb = filtered_data_pbdb %>%
+  dplyr::rename("Site" = collection_no, 
+                "Species" = accepted_name,
+                "MaxT" = max_ma,
+                "MinT" = min_ma,
+                "Family" = family,
+                "lng" = lng,
+                "lat" = lat)  
+
+filtered_data_pbdb = filtered_data_pbdb %>% # Adjust the position of columns
+  dplyr::select(Species, MaxT, MinT, lng, lat, Site, Family)
+
+filtered_data_pbdb = filtered_data_pbdb %>% # Remove lines that are not identified at family level 
+  dplyr::filter(Family != "NO_FAMILY_SPECIFIED")
+
+
+### NOW
+
+filtered_data_now = filtered_data_now %>%
+  dplyr::rename("Site" = LIDNUM , 
+         "Species" = SPECIES_NAMES,
+         "MaxT" = MAX_AGE,
+         "MinT" = MIN_AGE,
+         "Family" = FAMILY,
+         "lng" = LONG,
+         "lat" = LAT)  
+
+filtered_data_now = filtered_data_now %>% # Adjust the position of columns
+  dplyr::select(Species, MaxT, MinT, lng, lat, Site, Family)
+```
+
+
+# Clean and organize the data based on their temporal resolution
+
+```{r}
+# Dealing with occurrence resolution
+# Looking at our data, we can see that it has much variation in time resolution 
+# Resolution = the timespan between each occurrence for a species
+# High variation could point to more uncertainty
+
+pbdb = search.site(data = filtered_data_pbdb)
+now = search.site(data = filtered_data_now)
+
+# A little corrections for the sites in the NOW database:
+
+now$Site=now$Site+max(pbdb$Site)
+now$MaxT=as.numeric(now$MaxT)
+now$MinT=as.numeric(now$MinT)
+
+#########
+# Use the function to clean datasets
+#########
+
+### PBDB
+# Run the filter_resolution_and_plot function to PBDB dataset and using the temporal threshold of 5 Myr
+
+pbdb_with_flags = filter_resolution_and_plot(pbdb, 5)
+
+# Let's now create a new dataset removing the occurecences with flags (>= our threshold)
+
+pbdb = pbdb_with_flags %>% filter(Resolution_flag == FALSE)
+
+
+### NOW
+# Run the filter_resolution_and_plot function to NOW dataset and using the temporal threshold of 5 Myr
+
+now_with_flags = filter_resolution_and_plot(now, 5)
+
+# Let's now create a new dataset removing the occurecences with flags (>= our threshold)
+
+now = now_with_flags %>% filter(Resolution_flag == FALSE)
+
+
+################
+# Use the function to check the resolutions that were removed, how much time they differ from 
+# the defined threshold 
+################
+
+
+### PBDB
+# Create a plot to show the time difference (in Myr) between the removed occurence and the threshold 
+
+excess_counts_table_pbdb <- plot_excess_resolution_and_counts(pbdb_with_flags, threshold = 5)
+
+# Check the number of record within each category 
+
+print(excess_counts_table_pbdb)
+
+
+### NOW
+# Create a plot to show the time difference (in Myr) between the removed occurence and the threshold 
+
+excess_counts_table_now <- plot_excess_resolution_and_counts(now_with_flags, threshold = 5)
+
+# Check the number of record within each category 
+
+print(excess_counts_table_now)
+
+
+################
+# We can also see how many species, and who are they, based on the records with flags. 
+# And we can organize them within the defined windows. 
+################
+
+### PBDB
+
+species_table_excess_pbdb <- get_species_vectors_by_excess_interval (pbdb_with_flags, threshold = 5)
+print(species_table_excess_pbdb)
+
+### NOW
+
+species_table_excess_now <- get_species_vectors_by_excess_interval (now_with_flags, threshold = 5)
+print(species_table_excess_now)
+```
+
+
+# Select, based on the region, which database is going to be reduced due to pseudoreplicas
+
+```{r}
+# Standardizing region names
+
+region <- tolower("North America")  # Convert to lowercase (e.g. "North America")
+
+if (!is.null(region)) {
+  if (region %in% c("na", "north america")) {
+    chosen_df <- "NOW" #if user elects North America the PBDB is a better database
+  } else if (region %in% c("eu", "ea", "eurasia", "europe")) {
+    chosen_df <- "PBDB" #if user selects Eurasia the NOW is a better database
+  } else {
+    warning("Invalid region specified. Defaulting to NOW.")
+    chosen_df <- "NOW" # Default
+  }
+} else {
+  chosen_df <- "NOW"  # Default case
+}
+
+########################
+
+PBDB_data = pbdb
+NOW_data = now
+
+
+PBDB_data <- PBDB_data %>%
+  dplyr::mutate(across(c(MaxT, MinT, lng, lat), as.numeric))
+
+NOW_data <- NOW_data %>%
+  dplyr::mutate(across(c(MaxT, MinT, lng, lat), as.numeric))
+
+
+# Finding pseudoreplicates function
+
+PR <- find.pseudoreplicas(dtst1 = PBDB_data, dtst2 = NOW_data,
+                          lat_threshold = 1, long_threshold = 1,
+                          time_threshold = 6, print_progress = TRUE)
+
+# Removing pseudoreplicates based on chosen dataset
+
+if (chosen_df == "NOW") {
+  NOW_no_pseudo <- remove.pseudoreplicas(PR, NOW_data)  
+  true_occs <- rbind(PBDB_data, NOW_no_pseudo)
+} else {  # chosen_df == "PBDB"
+  PBDB_no_pseudo <- remove.pseudoreplicas(PR, PBDB_data)
+  true_occs <- rbind(PBDB_no_pseudo, NOW_data)
+}
+
+
+# Check the final database 
+
+print(true_occs)
+```
+
+
+
+
+
+
