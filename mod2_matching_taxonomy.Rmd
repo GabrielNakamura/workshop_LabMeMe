@@ -12,10 +12,13 @@ knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 # Lendo taxonomias 
 
 ```{r}
+library(dplyr)
 df_tax_pbdb <-
   read.csv(here::here("data", "processed", "pbdb_backbone_carn_250308.csv"), sep = ",")
 
 df_tax_faurby <- read.csv(here::here("data", "processed", "data_faurby.csv"), sep = ";")
+
+df_tax_now <- read.csv(here::here("data", "processed", "now_backbone_carn.csv"), sep = ",")
 ```
 
 # Processando bases taxonomicas 
@@ -28,31 +31,56 @@ df_tax_faurby2 <-
 
 df_tax_faurby3 <- 
   df_tax_faurby2 |> 
-  rename(now_family = Family, 
-         now_accepted_genus = Genus, 
-         now_accepted_species = Species, 
-         now_accepted_genus_species = genus_species,
-         now_taxon_genus_species = genus_species2,
-         now_taxon_genus = Original_Genus, 
-         now_taxon_species = Original_Species)
+  rename(faurby_family = Family, 
+         faurby_accepted_genus = Genus, 
+         faurby_accepted_species = Species, 
+         faurby_accepted_genus_species = genus_species,
+         faurby_taxon_genus_species = genus_species2,
+         faurby_taxon_genus = Original_Genus, 
+         faurby_taxon_species = Original_Species)
+
+# fixing taxon with genus only 
+df_tax_faurby3[which(df_tax_faurby3$faurby_accepted_species == "Genus_Only"), "faurby_accepted_genus_species"] <- df_tax_faurby3[which(df_tax_faurby3$faurby_accepted_species == "Genus_Only"), "faurby_accepted_genus"]
+
+# fixing taxon with indet or sp
+
+df_tax_faurby3[which(df_tax_faurby3$faurby_taxon_species == "sp." | df_tax_faurby3$faurby_taxon_species == "indet."), "faurby_accepted_genus_species"] <- df_tax_faurby3[which(df_tax_faurby3$faurby_taxon_species == "sp." | df_tax_faurby3$faurby_taxon_species == "indet."), "faurby_accepted_genus"]
+
+# fixing taxon with North America in their ephithet 
+
+df_tax_faurby3[grep("\\bNorthAmerica\\b", df_tax_faurby3$faurby_accepted_species, ignore.case = TRUE), "faurby_accepted_genus_species"] <- df_tax_faurby3[grep("\\bNorthAmerica\\b", df_tax_faurby3$faurby_accepted_species, ignore.case = TRUE), "faurby_accepted_genus"]
+
+# fixing taxon with Eurasia in their epithet 
+
+df_tax_faurby3[grep("\\bEurasia\\b", df_tax_faurby3$faurby_accepted_species, ignore.case = TRUE), "faurby_accepted_genus_species"] <- df_tax_faurby3[grep("\\bEurasia\\b", df_tax_faurby3$faurby_accepted_species, ignore.case = TRUE), "faurby_accepted_genus"]
 
 df_tax_faurby4 <- 
   df_tax_faurby3 |> 
-  select(now_accepted_genus_species, now_taxon_genus_species)
+  select(faurby_accepted_genus_species, faurby_taxon_genus_species)
 
 df_tax_faurby5 <- 
   df_tax_faurby4 |> 
-  distinct(now_accepted_genus_species, .keep_all = TRUE) 
+  distinct(faurby_accepted_genus_species, .keep_all = TRUE) 
 
+df_tax_faurby5[grep("_", df_tax_faurby5$faurby_accepted_genus_species), "faurby_accepted_rank"] <- 
+  "species"
+df_tax_faurby5[which(is.na(df_tax_faurby5$faurby_accepted_rank) == TRUE), "faurby_accepted_rank"] <- "genus"
+
+
+df_tax_faurby6 <- 
+  df_tax_faurby5 |> 
+  select(faurby_accepted_genus_species, faurby_accepted_rank)
+
+write.csv(df_tax_faurby6, here::here("data", "processed", "faurby_backbone_carn.csv"))
 
 ```
 
 ```{r}
 df_consensus <- 
-  df_tax_pbdb[match(df_tax_faurby5$now_accepted_genus_species, df_tax_pbdb$pbdb_accepted_name)[!is.na(match(df_tax_faurby5$now_accepted_genus_species, df_tax_pbdb$pbdb_accepted_name))], ]
+  df_tax_pbdb[match(df_tax_faurby5$faurby_accepted_genus_species, df_tax_pbdb$pbdb_accepted_name)[!is.na(match(df_tax_faurby5$faurby_accepted_genus_species, df_tax_pbdb$pbdb_accepted_name))], ]
 
 df_no_match <- 
-  df_tax_pbdb[-match(df_tax_faurby5$now_accepted_genus_species, df_tax_pbdb$pbdb_accepted_name)[!is.na(match(df_tax_faurby5$now_accepted_genus_species, df_tax_pbdb$pbdb_accepted_name))], ]
+  df_tax_pbdb[-match(df_tax_faurby5$faurby_accepted_genus_species, df_tax_pbdb$pbdb_accepted_name)[!is.na(match(df_tax_faurby5$faurby_accepted_genus_species, df_tax_pbdb$pbdb_accepted_name))], ]
 
 ```
 
