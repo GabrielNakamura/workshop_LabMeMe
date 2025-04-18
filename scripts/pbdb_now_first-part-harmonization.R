@@ -21,9 +21,8 @@
 # no dia especificado.
 
 library(groundhog)
-groundhog.day <- "2025-03-01"
+groundhog.day <- "2025-04-01"
 groundhog.packages <- c("here",
-                        "tidyr",
                         "dplyr",
                         "stringr",
                         "fuzzyjoin",
@@ -36,17 +35,17 @@ rm(groundhog.day,
 
 #### Carregar arquivos e selecionar colunas ####
 
-pbdb_taxa <- read.csv(here("01_data",
-                           "02_clean-data",
-                           "pbdb_backbone_carn_250308.csv"))
+pbdb_taxa <- read.csv(here("data",
+                           "processed",
+                           "pbdb_backbone_carn_250403.csv"))
 
 pbdb_taxa <- pbdb_taxa[, !(names(pbdb_taxa) %in% c("X", "...1"))] %>% #escrever a explicação do pq disso
   select(pbdb_accepted_name,
-         pbdb_accepted_rank) %>%
+         pbdb_accepted_rank) %>% #Adicionar a coluna de possível sinônimo por gênero
   distinct()
 
-now_taxa <- read.csv(here("01_data",
-                          "02_clean-data",
+now_taxa <- read.csv(here("data",
+                          "processed",
                           "now_backbone_carn.csv"))
 
 now_taxa <- now_taxa[, !(names(now_taxa) %in% c("X", "...1"))] %>%
@@ -92,6 +91,9 @@ separate_name_parts <- function(x, #your dataframe
   return(dtf)
 
   }
+
+pbdb_taxa <- pbdb_taxa %>%
+  mutate(pbdb_accepted_name = str_replace_all(pbdb_accepted_name, pattern = " ", replacement = "_"))
 
 pbdb_taxa <- separate_name_parts(pbdb_taxa,
                                  col_accepted_name = "pbdb_accepted_name",
@@ -307,6 +309,10 @@ fuzzymatch_summary_stats(1)
 fuzzymatch_summary_stats(2)
 fuzzymatch_summary_stats(3)
 fuzzymatch_summary_stats(4)
+
+View(rbind(fuzzymatch_summary_stats(1),
+      fuzzymatch_summary_stats(2)
+))
 
 # As tabelas de nomes
 match_exact_found #Correspondências exatas
