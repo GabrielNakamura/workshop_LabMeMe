@@ -47,9 +47,11 @@ pbdb_occs_names <- pbdb_250308_carn_raw_dtf %>%
          subgenus_no,
          identified_no,
          accepted_no) %>%
+  filter(accepted_rank == "species") %>%
   mutate(across(where(is.character),
                 ~na_if(., "")),
-         family_no = as.integer(na_if(family_no, "NF")))
+         family_no = as.integer(na_if(family_no, "NF"))) %>%
+  distinct()
 
 # Salvando o arquivo
 write.csv(pbdb_occs_names,
