@@ -20,8 +20,7 @@ pbdb_250308_carn_raw_dtf <- read.csv(here("data",
                                           "raw",
                                           "pbdb_occs_2025-04-03_raw.csv"),
                                      skip = 19)
-NCmisc::list.functions.in.file(here("scripts",
-                                    "pbdb_occurrence_names.R"))
+
 # Preparação dos dados para a harmonização
 
 pbdb_occs_names <- pbdb_250308_carn_raw_dtf %>%
@@ -57,4 +56,4 @@ write.csv(pbdb_occs_names,
           row.names = FALSE,
           file = here("data",
                       "processed",
-                      "pbdb_backbone_carn_250403.csv"))
+                      "pbdb_occs_species-names_2025-04-03.csv"))
