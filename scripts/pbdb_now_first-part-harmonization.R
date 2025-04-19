@@ -150,11 +150,43 @@ harmonize_exact_match <- function(base1_dtf,
     filter(base2_present == FALSE) %>%
     select(any_of(colnames(base1_dtf)))
 
+  #Creating a base summary of matched and unmatched names from each base
+  summ1 <- match_exact[[base1_col]] %>%
+    na.omit() %>%
+    unique() %>%
+    length()
+
+  summ2 <- match_exact[[base2_col]] %>%
+    na.omit() %>%
+    unique() %>%
+    length()
+
+  summ3 <- match_exact %>%
+    filter(base1_present == TRUE & base2_present == TRUE) %>%
+    nrow()
+
+  summ_table <- data.frame(base1_count = c(summ1, summ3, NA),
+                           base1_proportion = c(NA, NA, NA),
+                           base2_count = c(summ2, summ3, NA),
+                           base2_proportion = c(NA, NA, NA))
+  summ_table[3,] <- summ_table[1,] - summ_table[2,]
+  summ_table[2] <- summ_table[1]/summ1
+  summ_table[4] <- summ_table[3]/summ2
+
+  colnames(summ_table) <- str_replace_all(colnames(summ_table),
+                                          c("base1" = base1_suffix,
+                                            "base2" = base2_suffix))
+
+  row.names(summ_table) <- c("unique_names",
+                             "matched_names",
+                             "unmatched_names")
+
   #Saving the results on a list and renaming the dataframes with failed matches
   #with their appropriate suffixes
   result <- list(exact_match_found = exact_match_found,
                  base1_exact_match_failed = base1_failed_match,
-                 base2_exact_match_failed = base2_failed_match)
+                 base2_exact_match_failed = base2_failed_match,
+                 exact_match_summary = summ_table)
 
   names(result) <- str_replace_all(names(result),
                                    c("base1" = base1_suffix,
@@ -163,7 +195,6 @@ harmonize_exact_match <- function(base1_dtf,
   return(result)
 
   #adicionar parte de checar se o sufixo já vem no nome das colunas de nomes ou se precisa colocar
-  #adicionar o sumariozinho aqui dentro também
   #adicionar a possibilidade de incluir nome de autor ou outras colunas que a pessoa quiser na tabela de exact matches
 }
 
@@ -173,6 +204,7 @@ exact_match <- harmonize_exact_match(base1_dtf = pbdb_taxa,
                                      base2_suffix = "now",
                                      base1_col = "pbdb_accepted_name",
                                      base2_col = "now_accepted_name")
+
 
 
 ##### União com 1 ou 2 letras diferentes #####
@@ -272,33 +304,7 @@ match_unlikely_typos_found <- match_unlikely_typos %>%
 
 #### Resultado geral ####
 
-match_exact_summary_stats <- function(){
 
-  summ1 <- match_exact$pbdb_accepted_name %>%
-    na.omit() %>%
-    unique() %>%
-    length()
-
-  summ2 <- match_exact$now_accepted_name %>%
-    na.omit() %>%
-    unique() %>%
-    length()
-
-  summ3 <- match_exact %>%
-    filter(pbdb_present == TRUE & now_present == TRUE) %>%
-    nrow()
-
-  summ_table <- data.frame("pbdb_n" = c(summ1, summ3, NA),
-                           "pbdb_%" = c(NA, NA, NA),
-                           "now_n" = c(summ2, summ3, NA),
-                           "now_%" = c(NA, NA, NA))
-  summ_table[3,] <- summ_table[1,] - summ_table[2,]
-  summ_table[2] <- summ_table[1]/summ1
-  summ_table[4] <- summ_table[3]/summ2
-
-  return(summ_table)
-
-}
 
 fuzzymatch_summary_stats <- function(distance_between_strings) {
 
