@@ -10,7 +10,7 @@ groundhog.packages <- c("here",
                         "forcats",
                         "tidylog")
 
-groundhog.library(groundhog.packages, 
+groundhog.library(groundhog.packages,
                   groundhog.day)
 rm(groundhog.day,
    groundhog.packages)
@@ -18,10 +18,9 @@ rm(groundhog.day,
 #### Limpeza inicial ####
 # Carregar arquivo #
 
-pbdb_taxa <- read_csv(here("01_data", 
-                           "01_raw-data",
-                           "pbdb_data_250318_carnivora_namao.csv"), 
-                      skip = 15)
+pbdb_taxa <- read.csv(here("data",
+                             "raw",
+                             "pbdb_taxa_2025-04-03_raw.csv"), skip = 17)
 
 # Vetores de correção #
 
@@ -91,18 +90,19 @@ info_typo_fix_vct <- c("Cusafont" = "Crusafont",
                        "Rossenbüller" = "Rosenmüller",
                        "Solunias" = "Solounias", #https://sjpp.springeropen.com/articles/10.1007/s13358-012-0042-y
                        "Zimmerman " = "Zimmermann ",
-                       "Kretsoi" = "Kretzoi") 
+                       "Kretsoi" = "Kretzoi")
+
 
 # Renomeando colunas e corrigindo erros de digitação #
 pbdb_taxa <- pbdb_taxa %>%
   rename(all_of(pbdb_colnames_vct)) %>%
-  mutate(across(where(is.character), 
+  mutate(across(where(is.character),
                 ~str_replace_all(., info_typo_fix_vct)))
 
 #### Criação e formatação de colunas de autores aceitos ####
 
 # O PBDB não tem uma coluna de autoria dos accepted_name, só dos taxon_name, porque todo accepted_name
-# também é um taxon_name com autoria. A ideia aqui é filtrar os taxon_name que também são accepted_name e 
+# também é um taxon_name com autoria. A ideia aqui é filtrar os taxon_name que também são accepted_name e
 # usar a autoria do taxon_name pra criar a coluna de accepted_authority. O primeiro passo é marcar que
 # nomes de autor têm parênteses em uma nova coluna para começar a padronização do nome dos autores.
 
@@ -138,17 +138,17 @@ accepted_taxa_attr <- pbdb_taxa %>%
   distinct()
 
 # Filtrando autoridades que tem ano e criando coluna de ano
-accepted_taxa_attr_format <- accepted_taxa_attr %>% 
-  filter(str_detect(accepted_copy, 
-                    pattern = "[:digit:]")) %>% 
-  mutate(accepted_copy = stringi::stri_replace_last_fixed(accepted_copy, 
+accepted_taxa_attr_format <- accepted_taxa_attr %>%
+  filter(str_detect(accepted_copy,
+                    pattern = "[:digit:]")) %>%
+  mutate(accepted_copy = stringi::stri_replace_last_fixed(accepted_copy,
                                                           pattern = " ",
                                                           replacement = "~")) %>%
-  separate(accepted_copy, 
-           into = c("pbdb_accepted_author_name_format", 
-                    "pbdb_accepted_author_year"), 
+  separate(accepted_copy,
+           into = c("pbdb_accepted_author_name_format",
+                    "pbdb_accepted_author_year"),
            sep = "~") %>%
-  
+
   distinct()
 
 # Juntando com autoridades sem ano e formatando nomes dos autores aceitos para retirar pontos,
@@ -183,11 +183,11 @@ accepted_taxa_attr_format <- full_join(accepted_taxa_attr, accepted_taxa_attr_fo
 #Juntando com resto da tabela, formantando nomes de taxa e família
 pbdb_taxa <- pbdb_taxa %>%
   full_join(., accepted_taxa_attr_format) %>%
-  mutate(pbdb_accepted_name = str_replace_all(pbdb_accepted_name, 
-                                              pattern = " ", 
+  mutate(pbdb_accepted_name = str_replace_all(pbdb_accepted_name,
+                                              pattern = " ",
                                               replacement = "_"),
-         pbdb_taxon_name = str_replace_all(pbdb_taxon_name, 
-                                           pattern = " ", 
+         pbdb_taxon_name = str_replace_all(pbdb_taxon_name,
+                                           pattern = " ",
                                            replacement = "_"),
          pbdb_accepted_sist_family_name = toupper(pbdb_accepted_sist_family_name)) %>%
   distinct()
@@ -222,10 +222,10 @@ original_taxa <- pbdb_taxa %>%
 
 pbdb_backbone_carn_250308 <- pbdb_taxa %>%
   select(pbdb_taxon_rank,
-         pbdb_taxon_name,
-         pbdb_taxon_authority,
-         pbdb_accepted_name,
          pbdb_accepted_rank,
+         pbdb_taxon_name,
+         pbdb_accepted_name,
+         pbdb_taxon_authority,
          pbdb_accepted_authority,
          pbdb_accepted_author_name_format,
          pbdb_accepted_author_year,
