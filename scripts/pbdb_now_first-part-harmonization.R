@@ -37,18 +37,15 @@ rm(groundhog.day,
 
 pbdb_taxa <- read.csv(here("data",
                            "processed",
-                           "pbdb_backbone_carn_250403.csv"))
-
-pbdb_taxa <- pbdb_taxa[, !(names(pbdb_taxa) %in% c("X", "...1"))] %>% #escrever a explicação do pq disso
+                           "pbdb_occs_species-names_2025-04-03.csv")) %>%
   select(pbdb_accepted_name,
-         pbdb_accepted_rank) %>% #Adicionar a coluna de possível sinônimo por gênero
+         pbdb_internal_synonym,
+         pbdb_accepted_rank) %>%
   distinct()
 
 now_taxa <- read.csv(here("data",
                           "processed",
-                          "now_backbone_carn.csv"))
-
-now_taxa <- now_taxa[, !(names(now_taxa) %in% c("X", "...1"))] %>%
+                          "now_occs_species-names_2025-04-03.csv")) %>%
   select(now_accepted_name,
          now_accepted_rank) %>%
   distinct()
@@ -92,9 +89,6 @@ separate_name_parts <- function(x, #your dataframe
 
   }
 
-pbdb_taxa <- pbdb_taxa %>%
-  mutate(pbdb_accepted_name = str_replace_all(pbdb_accepted_name, pattern = " ", replacement = "_"))
-
 pbdb_taxa <- separate_name_parts(pbdb_taxa,
                                  col_accepted_name = "pbdb_accepted_name",
                                  col_accepted_rank = "pbdb_accepted_rank",
@@ -103,47 +97,69 @@ pbdb_taxa <- separate_name_parts(pbdb_taxa,
 now_taxa <- separate_name_parts(now_taxa,
                                 col_accepted_name = "now_accepted_name",
                                 col_accepted_rank = "now_accepted_rank",
-                                ranks_to_keep = c("Genus", "Subgenus", "Species", "Subspecies"),
+                                ranks_to_keep = c("genus", "subgenus", "species", "subspecies"),
                                 source_suffix = "now")
-
-#### Vetores de entrada de parâmetros ####
-
-accepted_name_cols_vct <- c(
-  "pbdb_accepted_name" = "now_accepted_name"
-)
-
-accepted_rank_vct <- c(
-  "species",
-  "Species"
-  )
 
 #### União das bases ####
 
 ##### União exata #####
 
-match_exact <- full_join(filter(pbdb_taxa,
-                      pbdb_accepted_rank %in% accepted_rank_vct),
-               filter(now_taxa,
-                      now_accepted_rank %in% accepted_rank_vct),
-               by = accepted_name_cols_vct,
-               keep = TRUE) %>%
-  mutate(pbdb_present = !is.na(pbdb_accepted_name),
-         now_present = !is.na(now_accepted_name)) %>%
-  distinct()
+harmonize_exact_match <- function(base1_dtf,
+                                  base2_dtf,
+                                  base1_suffix,
+                                  base2_suffix,
+                                  base1_col,
+                                  base2_col) {
 
-match_exact_found <- match_exact %>%
-  filter(pbdb_present == TRUE & now_present == TRUE) %>%
-  mutate(string_distance = 0,
-         match_notes = "exact match") %>%
-  select(pbdb_accepted_rank,
-         now_accepted_rank,
-         pbdb_accepted_name,
-         now_accepted_name,
-         string_distance,
-         match_notes)
+  by_cols <- base2_col
+  names(by_cols) <- base1_col
 
-match_exact_failed <- match_exact %>%
-  filter(pbdb_present == FALSE | now_present == FALSE)
+  select_cols <- c(base1_col, base2_col)
+
+  match_exact <- full_join(base1_dtf, base2_dtf,
+                           by = by_cols,
+                           keep = TRUE) %>%
+    mutate(base1_present = !is.na(eval(parse(text = base1_col))),
+           base2_present = !is.na(eval(parse(text = base2_col)))) %>%
+    distinct()
+
+  exact_match_found <- match_exact %>%
+    filter(base1_present == TRUE & base2_present == TRUE) %>%
+    mutate(string_distance = 0,
+           match_notes = "exact match") %>%
+    select(all_of(select_cols),
+           string_distance,
+           match_notes)
+
+  base1_failed_match <- match_exact %>%
+    filter(base1_present == FALSE) %>%
+    select(any_of(colnames(base2_dtf)))
+
+  base2_failed_match <- match_exact %>%
+    filter(base2_present == FALSE) %>%
+    select(any_of(colnames(base1_dtf)))
+
+  result <- list(exact_match_found = exact_match_found,
+                 base1_failed_match = base1_failed_match,
+                 base2_failed_match = base2_failed_match)
+
+  names(result) <- str_replace_all(names(result),
+                                   c("base1" = base1_suffix,
+                                     "base2" = base2_suffix))
+
+  return(result)
+
+  #adicionar parte de checar se o sufixo já vem no nome das colunas de nomes ou se precisa colocar
+  #adicionar o sumariozinho aqui dentro também
+}
+
+exact_match <- harmonize_exact_match(base1_dtf = pbdb_taxa,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_accepted_name",
+                                     base2_col = "now_accepted_name")
+
 
 ##### União com 1 ou 2 letras diferentes #####
 
