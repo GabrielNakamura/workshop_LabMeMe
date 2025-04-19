@@ -8,7 +8,9 @@ library(here)
 library(groundhog)
 groundhog.day <- "2025-04-01"
 groundhog.packages <- c("here",
+                        "tidyr",
                         "dplyr",
+                        "stringr",
                         "tidylog")
 
 groundhog.library(groundhog.packages,
@@ -24,7 +26,7 @@ pbdb_250308_carn_raw_dtf <- read.csv(here("data",
 # Preparação dos dados para a harmonização
 
 pbdb_occs_names <- pbdb_250308_carn_raw_dtf %>%
-  select(identified_name,
+  select(identified_name, #Selecionando colunas com informação taxonômica
          difference,
          accepted_name,
          identified_rank,
@@ -47,11 +49,24 @@ pbdb_occs_names <- pbdb_250308_carn_raw_dtf %>%
          subgenus_no,
          identified_no,
          accepted_no) %>%
-  filter(accepted_rank == "species") %>%
-  mutate(across(where(is.character),
+  filter(accepted_rank == "species") %>% #Filtrando apenas nomes pertencentes a espécies
+  distinct() %>% #Compactand a tabela para conter apenas linhas distintas, não repetidas
+  mutate(across(where(is.character), #Substituindo células vazias na tabela toda por NA
                 ~na_if(., "")),
-         family_no = as.integer(na_if(family_no, "NF"))) %>%
-  distinct()
+         across(.cols = c(identified_name, accepted_name, genus), #Substituindo os espaços por _ nas colunas de nome identificado, aceito e gênero
+                ~str_replace_all(., pattern = " ", replacement = "_")),
+         family_no = as.integer(na_if(family_no, "NF")), #Substituindo valor "NF" na coluna "family_no" para NA, e transformando a colunas para o tipo "integer", pois ela corresponde ao número de registro das famílias válidas na base
+         split_name = accepted_name, #Copiando coluna de nomes aceitos para substituir o gênero do nome aceito pelo gênero da coluna genus
+         split_name = str_replace_all(split_name, #Retirando o nome do subgênero para não ficar repetido com a coluna genus
+                                      pattern = "\\(.*\\)_",
+                                      replacement = "")) %>%
+  separate_wider_delim(cols = split_name, #Separando cópia do nome aceito para juntar com a coluna genus
+                       names = c("old_genus", "rest"),
+                       delim = "_",
+                       too_few = "align_start",
+                       too_many = "merge") %>%
+  mutate(pbdb_internal_synonym = paste(genus, rest, sep = "_")) %>% #Criando a coluna de sinônimos internos do pbdb
+  relocate(pbdb_internal_synonym, .after = accepted_name) #Reorganizando colunas
 
 # Salvando o arquivo
 write.csv(pbdb_occs_names,
