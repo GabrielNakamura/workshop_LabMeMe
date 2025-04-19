@@ -111,11 +111,14 @@ harmonize_exact_match <- function(base1_dtf,
                                   base1_col,
                                   base2_col) {
 
+  #Preparing needed objects to use the name columns on the functions full_join() and select()
   by_cols <- base2_col
   names(by_cols) <- base1_col
 
   select_cols <- c(base1_col, base2_col)
 
+  #Performing exact match of names between the 2 bases,
+  #creating flag columns and filtering table for distinct rows
   match_exact <- full_join(base1_dtf, base2_dtf,
                            by = by_cols,
                            keep = TRUE) %>%
@@ -123,6 +126,12 @@ harmonize_exact_match <- function(base1_dtf,
            base2_present = !is.na(eval(parse(text = base2_col)))) %>%
     distinct()
 
+  #Filtering names succesfuly matched between bases,
+  #creating the information columns "string_distance" for the number of different
+  #characters between matched names, which is 0 for exact matches, and "match_notes"
+  #for a quick comment on what's happening with each combination, which again is
+  #an exact match. Finally, selecting the entered name columns and the information
+  #columns.
   exact_match_found <- match_exact %>%
     filter(base1_present == TRUE & base2_present == TRUE) %>%
     mutate(string_distance = 0,
@@ -131,6 +140,8 @@ harmonize_exact_match <- function(base1_dtf,
            string_distance,
            match_notes)
 
+  #Filtering the names on each base that did not find an exact match on the other
+  #base. These names can be parsed to other functions matching functions
   base1_failed_match <- match_exact %>%
     filter(base1_present == FALSE) %>%
     select(any_of(colnames(base2_dtf)))
@@ -139,9 +150,11 @@ harmonize_exact_match <- function(base1_dtf,
     filter(base2_present == FALSE) %>%
     select(any_of(colnames(base1_dtf)))
 
+  #Saving the results on a list and renaming the dataframes with failed matches
+  #with their appropriate suffixes
   result <- list(exact_match_found = exact_match_found,
-                 base1_failed_match = base1_failed_match,
-                 base2_failed_match = base2_failed_match)
+                 base1_exact_match_failed = base1_failed_match,
+                 base2_exact_match_failed = base2_failed_match)
 
   names(result) <- str_replace_all(names(result),
                                    c("base1" = base1_suffix,
@@ -151,6 +164,7 @@ harmonize_exact_match <- function(base1_dtf,
 
   #adicionar parte de checar se o sufixo já vem no nome das colunas de nomes ou se precisa colocar
   #adicionar o sumariozinho aqui dentro também
+  #adicionar a possibilidade de incluir nome de autor ou outras colunas que a pessoa quiser na tabela de exact matches
 }
 
 exact_match <- harmonize_exact_match(base1_dtf = pbdb_taxa,
