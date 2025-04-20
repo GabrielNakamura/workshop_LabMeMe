@@ -1,7 +1,9 @@
 ---
 title: "Harmonization functions and guide"
 author: "Thaís Gomes Piazza Faria"
-format: html
+format: 
+  html:
+    output: false
 editor: source
 ---
 
@@ -16,6 +18,7 @@ For the step-by-step guide, the fossil occurrence databases PBDB and NOW will be
 -   [ ] Checagem da coluna de autores
 -   [ ] Explicação da função harmonize_exact_match
 -   [ ] Checar o que acontece caso a pessoa chegue com uma lista de nomes repetidos
+-   [ ] Permitir que outras colunas (tipo pbdb_internal_synonym) seja preservada no resultado dos matchings, e consertar lá na parte de passo específico
 
 ## Loading data and packages
 
@@ -42,14 +45,14 @@ pbdb_taxa <- read.csv(here("data",
                            "pbdb_occs_species-names_2025-04-03.csv")) %>%
   select(pbdb_accepted_name,
          pbdb_internal_synonym,
-         pbdb_accepted_rank) #%>%
+         pbdb_accepted_rank) %>%
   distinct()
 
 now_taxa <- read.csv(here("data",
                           "processed",
                           "now_occs_species-names_2025-04-03.csv")) %>%
   select(now_accepted_name,
-         now_accepted_rank) #%>%
+         now_accepted_rank) %>%
   distinct()
 ```
 
@@ -383,6 +386,7 @@ final_synonymy <- exact_match$exact_match_found
 #### Using failed matches iteratively
 
 String distance of 1 character
+
 ```{r}
 fuzzy_match1_min1max1 <- harmonize_fuzzy_match(base1_dtf = exact_match$pbdb_exact_match_failed,
                                      base2_dtf = exact_match$now_exact_match_failed,
@@ -396,12 +400,17 @@ fuzzy_match1_min1max1 <- harmonize_fuzzy_match(base1_dtf = exact_match$pbdb_exac
 ```
 
 Evaluating correct matches
+
 ```{r}
 fuzzy_match1_min1max1_eval <- fuzzy_match1_min1max1$min1max1_match_found %>%
-  mutate(accepted_match = TRUE)
+  mutate(accepted_match = case_when(
+    pbdb_accepted_name == "Cyon_antiquus" ~ FALSE, 
+    TRUE ~ TRUE
+  ))
 ```
 
 Adding correct matches to synonymy
+
 ```{r}
 final_synonymy <- final_synonymy %>%
   bind_rows(select(filter(fuzzy_match1_min1max1_eval, 
@@ -410,6 +419,7 @@ final_synonymy <- final_synonymy %>%
 ```
 
 String difference of 2 characters
+
 ```{r}
 fuzzy_match1_min2max2 <- harmonize_fuzzy_match(base1_dtf = fuzzy_match1_min1max1$pbdb_min1max1_match_failed,
                                      base2_dtf = fuzzy_match1_min1max1$now_min1max1_match_failed,
@@ -423,12 +433,14 @@ fuzzy_match1_min2max2 <- harmonize_fuzzy_match(base1_dtf = fuzzy_match1_min1max1
 ```
 
 Evaluating correct matches
+
 ```{r}
 fuzzy_match1_min2max2_eval <- fuzzy_match1_min2max2$min2max2_match_found %>%
   mutate(accepted_match = c(TRUE, TRUE, FALSE, TRUE, TRUE))
 ```
 
 Adding correct matches to synonymy
+
 ```{r}
 final_synonymy <- final_synonymy %>%
   bind_rows(select(filter(fuzzy_match1_min2max2_eval, 
@@ -437,6 +449,7 @@ final_synonymy <- final_synonymy %>%
 ```
 
 String distance of 3 characters
+
 ```{r}
 fuzzy_match1_min3max3 <- harmonize_fuzzy_match(base1_dtf = fuzzy_match1_min2max2$pbdb_min2max2_match_failed,
                                      base2_dtf = fuzzy_match1_min2max2$now_min2max2_match_failed,
@@ -450,12 +463,14 @@ fuzzy_match1_min3max3 <- harmonize_fuzzy_match(base1_dtf = fuzzy_match1_min2max2
 ```
 
 Evaluating correct matches
+
 ```{r}
 fuzzy_match1_min3max3_eval <- fuzzy_match1_min3max3$min3max3_match_found %>%
   mutate(accepted_match = FALSE)
 ```
 
 Adding correct matches to synonymy
+
 ```{r}
 final_synonymy <- final_synonymy %>%
   bind_rows(select(filter(fuzzy_match1_min3max3_eval, 
@@ -464,6 +479,7 @@ final_synonymy <- final_synonymy %>%
 ```
 
 String distance of 4 characters
+
 ```{r}
 fuzzy_match1_min4max4 <- harmonize_fuzzy_match(base1_dtf = fuzzy_match1_min3max3$pbdb_min3max3_match_failed,
                                      base2_dtf = fuzzy_match1_min3max3$now_min3max3_match_failed,
@@ -477,12 +493,14 @@ fuzzy_match1_min4max4 <- harmonize_fuzzy_match(base1_dtf = fuzzy_match1_min3max3
 ```
 
 Evaluating correct matches
+
 ```{r}
 fuzzy_match1_min4max4_eval <- fuzzy_match1_min4max4$min4max4_match_found %>%
   mutate(accepted_match = FALSE)
 ```
 
 Adding correct matches to synonymy
+
 ```{r}
 final_synonymy <- final_synonymy %>%
   bind_rows(select(filter(fuzzy_match1_min4max4_eval, 
@@ -493,6 +511,7 @@ final_synonymy <- final_synonymy %>%
 #### Using the full list of names at once
 
 String difference of 1 to 4
+
 ```{r}
 fuzzy_match2_min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdb_taxa,
                                      base2_dtf = now_taxa,
@@ -506,6 +525,7 @@ fuzzy_match2_min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdb_taxa,
 ```
 
 Gathering already evaluated pairs
+
 ```{r}
 evaluated_pairs <- bind_rows(fuzzy_match1_min1max1_eval,
                              fuzzy_match1_min2max2_eval,
@@ -514,6 +534,7 @@ evaluated_pairs <- bind_rows(fuzzy_match1_min1max1_eval,
 ```
 
 Filtering already evaluated pairs from full list of matches
+
 ```{r}
 filtered_pairs <- anti_join(fuzzy_match2_min1max4$min1max4_match_found,
           evaluated_pairs)
@@ -521,6 +542,7 @@ filtered_pairs <- anti_join(fuzzy_match2_min1max4$min1max4_match_found,
 ```
 
 Evaluating correct matches
+
 ```{r}
 fuzzy_match2_min1max4_eval <- filtered_pairs %>%
   mutate(accepted_match = c(rep(FALSE, 7), 
@@ -533,6 +555,7 @@ fuzzy_match2_min1max4_eval <- filtered_pairs %>%
 ```
 
 Adding correct matches to synonymy
+
 ```{r}
 final_synonymy <- final_synonymy %>%
   bind_rows(select(filter(fuzzy_match2_min1max4_eval, 
@@ -540,10 +563,9 @@ final_synonymy <- final_synonymy %>%
        -accepted_match))
 ```
 
-
-
-
 ### Specific step
+
+#### Checking alternative PBDB genus combination
 
 ```{r}
 pbdb_different_names <- pbdb_taxa %>%
@@ -551,10 +573,187 @@ pbdb_different_names <- pbdb_taxa %>%
          pbdb_internal_synonym) %>%
   distinct() %>%
   filter(pbdb_accepted_name != pbdb_internal_synonym)
+```
 
-pbdb_subgenus_names <- pbdb_taxa %>%
+```{r}
+exact_match1 <- harmonize_exact_match(base1_dtf = pbdb_taxa,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_internal_synonym",
+                                     base2_col = "now_accepted_name")
+```
+
+```{r}
+a <- exact_match1$exact_match_found %>%
+  filter(pbdb_internal_synonym %in% pbdb_different_names$pbdb_internal_synonym) %>%
+  left_join(pbdb_taxa[c("pbdb_accepted_name", 
+                         "pbdb_internal_synonym")])
+```
+
+```{r}
+final_synonymy <- left_join(final_synonymy, 
+                            pbdb_taxa[c("pbdb_accepted_name",
+                                        "pbdb_internal_synonym")]) %>%
+  distinct() %>%
+  bind_rows(a)
+
+```
+
+```{r}
+fuzzy_match3_min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdb_different_names,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_internal_synonym",
+                                     base2_col = "now_accepted_name",
+                                     min_dist = 1,
+                                     max_dist = 4,
+                                     delim = "_")
+```
+
+```{r}
+fuzzy_match3_min1max4_eval <- fuzzy_match3_min1max4$min1max4_match_found %>%
+  left_join(pbdb_taxa[c("pbdb_accepted_name", 
+                        "pbdb_internal_synonym")]) %>% mutate(accepted_match = FALSE)
+```
+
+```{r}
+final_synonymy <- final_synonymy %>%
+  bind_rows(select(filter(fuzzy_match3_min1max4_eval, 
+              accepted_match == TRUE),
+       -accepted_match))
+```
+
+#### Checking possible matches when deleting or swapping subgenus
+
+```{r}
+pbdb_subgenus_deleted <- pbdb_taxa %>%
   filter(str_detect(pbdb_accepted_name, pattern = "\\(") | 
-           str_detect(pbdb_internal_synonym, pattern = "\\("))
+           str_detect(pbdb_internal_synonym, pattern = "\\(")) %>%
+  mutate(pbdb_accepted_name_copy = pbdb_accepted_name,
+         pbdb_internal_synonym_copy = pbdb_internal_synonym,
+         across(contains("_copy"),
+                ~str_replace_all(., pattern = "_\\(.*\\)", 
+                                 replacement = "")))
+pbdb_subgenus_swapped <- pbdb_taxa %>%
+  filter(str_detect(pbdb_accepted_name, pattern = "\\(") | 
+           str_detect(pbdb_internal_synonym, pattern = "\\(")) %>%
+  mutate(pbdb_accepted_name_copy = pbdb_accepted_name,
+         pbdb_internal_synonym_copy = pbdb_internal_synonym,
+         across(contains("_copy"),
+                ~str_replace_all(., c(".*\\(" = "",
+                                      "\\)" = ""))))
+```
+
+```{r}
+exact_match2 <- harmonize_exact_match(base1_dtf = pbdb_subgenus_deleted,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_accepted_name_copy",
+                                     base2_col = "now_accepted_name")
+
+exact_match3 <- harmonize_exact_match(base1_dtf = pbdb_subgenus_deleted,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_internal_synonym_copy",
+                                     base2_col = "now_accepted_name")
+
+exact_match4 <- harmonize_exact_match(base1_dtf = pbdb_subgenus_swapped,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_accepted_name_copy",
+                                     base2_col = "now_accepted_name")
+
+exact_match5 <- harmonize_exact_match(base1_dtf = pbdb_subgenus_swapped,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_internal_synonym_copy",
+                                     base2_col = "now_accepted_name")
+```
+
+Aqui eu to indo direto sem marcar as coisas como true, tem que arrumar depois
+
+```{r}
+final_synonymy <- bind_rows(final_synonymy,
+          select(left_join(exact_match2$exact_match_found, 
+                           pbdb_subgenus_deleted), 
+                 !contains("_copy")),
+          select(left_join(exact_match3$exact_match_found, 
+                           pbdb_subgenus_deleted), 
+                 !contains("_copy")),
+          select(left_join(exact_match4$exact_match_found, 
+                           pbdb_subgenus_swapped), 
+                 !contains("_copy")),
+          select(left_join(exact_match5$exact_match_found, 
+                           pbdb_subgenus_swapped), 
+                 !contains("_copy"))) %>%
+  distinct() %>%
+  select(-pbdb_accepted_rank)
+```
+
+```{r}
+fuzzy_match4_min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdb_subgenus_deleted,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_accepted_name_copy",
+                                     base2_col = "now_accepted_name",
+                                     min_dist = 1,
+                                     max_dist = 4,
+                                     delim = "_")
+
+fuzzy_match5_min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdb_subgenus_deleted,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_internal_synonym_copy",
+                                     base2_col = "now_accepted_name",
+                                     min_dist = 1,
+                                     max_dist = 4,
+                                     delim = "_")
+
+fuzzy_match6_min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdb_subgenus_swapped,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_accepted_name_copy",
+                                     base2_col = "now_accepted_name",
+                                     min_dist = 1,
+                                     max_dist = 4,
+                                     delim = "_")
+
+fuzzy_match7_min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdb_subgenus_swapped,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_internal_synonym_copy",
+                                     base2_col = "now_accepted_name",
+                                     min_dist = 1,
+                                     max_dist = 4,
+                                     delim = "_")
+```
+
+Nenhum aqui parece válido
+```{r}
+bind_rows(select(left_join(fuzzy_match4_min1max4$min1max4_match_found, 
+                           pbdb_subgenus_deleted), 
+                 !contains("_copy")),
+          select(left_join(fuzzy_match5_min1max4$min1max4_match_found, 
+                           pbdb_subgenus_deleted), 
+                 !contains("_copy")),
+          select(left_join(fuzzy_match6_min1max4$min1max4_match_found, 
+                           pbdb_subgenus_swapped), 
+                 !contains("_copy")),
+          select(left_join(fuzzy_match7_min1max4$min1max4_match_found, 
+                           pbdb_subgenus_swapped), 
+                 !contains("_copy"))) %>%
+  distinct()
 ```
 
 
+foram 35 nomes do pbdb, q correspondem a 62 ocorrências de 2195 (2,8%), e 35 nomes do now, que correspondem a 35 ocorrências de 1371 (2,55%)
