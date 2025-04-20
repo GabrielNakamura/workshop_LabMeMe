@@ -42,14 +42,14 @@ pbdb_taxa <- read.csv(here("data",
                            "pbdb_occs_species-names_2025-04-03.csv")) %>%
   select(pbdb_accepted_name,
          pbdb_internal_synonym,
-         pbdb_accepted_rank) %>%
+         pbdb_accepted_rank) #%>%
   distinct()
 
 now_taxa <- read.csv(here("data",
                           "processed",
                           "now_occs_species-names_2025-04-03.csv")) %>%
   select(now_accepted_name,
-         now_accepted_rank) %>%
+         now_accepted_rank) #%>%
   distinct()
 ```
 
@@ -165,12 +165,12 @@ harmonize_exact_match <- function(base1_dtf,
   #Filtering the names on each base that did not find an exact match on the other
   #base. These names can be parsed to other functions matching functions
   base1_failed_match <- match_exact %>%
-    filter(base1_present == FALSE) %>%
-    select(any_of(colnames(base2_dtf)))
-  
-  base2_failed_match <- match_exact %>%
     filter(base2_present == FALSE) %>%
     select(any_of(colnames(base1_dtf)))
+  
+  base2_failed_match <- match_exact %>%
+    filter(base1_present == FALSE) %>%
+    select(any_of(colnames(base2_dtf)))
   
   #Creating a base summary of matched and unmatched names from each base
   summ1 <- match_exact[[base1_col]] %>%
@@ -220,12 +220,12 @@ harmonize_exact_match <- function(base1_dtf,
   #adicionar a possibilidade de incluir nome de autor ou outras colunas que a pessoa quiser na tabela de exact matches
 }
 
-exact_match <- harmonize_exact_match(base1_dtf = pbdb_taxa,
-                                     base2_dtf = now_taxa,
-                                     base1_suffix = "pbdb",
-                                     base2_suffix = "now",
-                                     base1_col = "pbdb_accepted_name",
-                                     base2_col = "now_accepted_name")
+#exact_match <- harmonize_exact_match(base1_dtf = pbdb_taxa,
+#                                     base2_dtf = now_taxa,
+#                                     base1_suffix = "pbdb",
+#                                     base2_suffix = "now",
+#                                     base1_col = "pbdb_accepted_name",
+#                                     base2_col = "now_accepted_name")
 ```
 
 ### harmonize_fuzzy_match
@@ -348,8 +348,44 @@ harmonize_fuzzy_match <- function(base1_dtf,
   #Fazer alguma coisa com estatísticas descritivas
 }
 
-fuzzy_match <- harmonize_fuzzy_match(base1_dtf = pbdb_taxa,
+#fuzzy_match <- harmonize_fuzzy_match(base1_dtf = pbdb_taxa,
+#                                     base2_dtf = now_taxa,
+#                                     base1_suffix = "pbdb",
+#                                     base2_suffix = "now",
+#                                     base1_col = "pbdb_accepted_name",
+#                                     base2_col = "now_accepted_name",
+#                                     min_dist = 1,
+#                                     max_dist = 2,
+#                                     delim = "_")
+```
+
+## Step-by-step Guide
+
+### Exact matches
+
+```{r}
+exact_match <- harmonize_exact_match(base1_dtf = pbdb_taxa,
                                      base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_accepted_name",
+                                     base2_col = "now_accepted_name")
+
+exact_match$exact_match_summary
+```
+
+```{r}
+final_synonymy <- exact_match$exact_match_found
+```
+
+### Fuzzy matches
+
+#### Using failed matches iteratively
+
+String distance of 1 character
+```{r}
+fuzzy_match1_min1max1 <- harmonize_fuzzy_match(base1_dtf = exact_match$pbdb_exact_match_failed,
+                                     base2_dtf = exact_match$now_exact_match_failed,
                                      base1_suffix = "pbdb",
                                      base2_suffix = "now",
                                      base1_col = "pbdb_accepted_name",
@@ -358,3 +394,167 @@ fuzzy_match <- harmonize_fuzzy_match(base1_dtf = pbdb_taxa,
                                      max_dist = 1,
                                      delim = "_")
 ```
+
+Evaluating correct matches
+```{r}
+fuzzy_match1_min1max1_eval <- fuzzy_match1_min1max1$min1max1_match_found %>%
+  mutate(accepted_match = TRUE)
+```
+
+Adding correct matches to synonymy
+```{r}
+final_synonymy <- final_synonymy %>%
+  bind_rows(select(filter(fuzzy_match1_min1max1_eval, 
+              accepted_match == TRUE),
+       -accepted_match))
+```
+
+String difference of 2 characters
+```{r}
+fuzzy_match1_min2max2 <- harmonize_fuzzy_match(base1_dtf = fuzzy_match1_min1max1$pbdb_min1max1_match_failed,
+                                     base2_dtf = fuzzy_match1_min1max1$now_min1max1_match_failed,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_accepted_name",
+                                     base2_col = "now_accepted_name",
+                                     min_dist = 2,
+                                     max_dist = 2,
+                                     delim = "_")
+```
+
+Evaluating correct matches
+```{r}
+fuzzy_match1_min2max2_eval <- fuzzy_match1_min2max2$min2max2_match_found %>%
+  mutate(accepted_match = c(TRUE, TRUE, FALSE, TRUE, TRUE))
+```
+
+Adding correct matches to synonymy
+```{r}
+final_synonymy <- final_synonymy %>%
+  bind_rows(select(filter(fuzzy_match1_min2max2_eval, 
+              accepted_match == TRUE),
+       -accepted_match))
+```
+
+String distance of 3 characters
+```{r}
+fuzzy_match1_min3max3 <- harmonize_fuzzy_match(base1_dtf = fuzzy_match1_min2max2$pbdb_min2max2_match_failed,
+                                     base2_dtf = fuzzy_match1_min2max2$now_min2max2_match_failed,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_accepted_name",
+                                     base2_col = "now_accepted_name",
+                                     min_dist = 3,
+                                     max_dist = 3,
+                                     delim = "_")
+```
+
+Evaluating correct matches
+```{r}
+fuzzy_match1_min3max3_eval <- fuzzy_match1_min3max3$min3max3_match_found %>%
+  mutate(accepted_match = FALSE)
+```
+
+Adding correct matches to synonymy
+```{r}
+final_synonymy <- final_synonymy %>%
+  bind_rows(select(filter(fuzzy_match1_min3max3_eval, 
+              accepted_match == TRUE),
+       -accepted_match))
+```
+
+String distance of 4 characters
+```{r}
+fuzzy_match1_min4max4 <- harmonize_fuzzy_match(base1_dtf = fuzzy_match1_min3max3$pbdb_min3max3_match_failed,
+                                     base2_dtf = fuzzy_match1_min3max3$now_min3max3_match_failed,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_accepted_name",
+                                     base2_col = "now_accepted_name",
+                                     min_dist = 4,
+                                     max_dist = 4,
+                                     delim = "_")
+```
+
+Evaluating correct matches
+```{r}
+fuzzy_match1_min4max4_eval <- fuzzy_match1_min4max4$min4max4_match_found %>%
+  mutate(accepted_match = FALSE)
+```
+
+Adding correct matches to synonymy
+```{r}
+final_synonymy <- final_synonymy %>%
+  bind_rows(select(filter(fuzzy_match1_min4max4_eval, 
+              accepted_match == TRUE),
+       -accepted_match))
+```
+
+#### Using the full list of names at once
+
+String difference of 1 to 4
+```{r}
+fuzzy_match2_min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdb_taxa,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_accepted_name",
+                                     base2_col = "now_accepted_name",
+                                     min_dist = 1,
+                                     max_dist = 4,
+                                     delim = "_")
+```
+
+Gathering already evaluated pairs
+```{r}
+evaluated_pairs <- bind_rows(fuzzy_match1_min1max1_eval,
+                             fuzzy_match1_min2max2_eval,
+                             fuzzy_match1_min3max3_eval,
+                             fuzzy_match1_min4max4_eval)
+```
+
+Filtering already evaluated pairs from full list of matches
+```{r}
+filtered_pairs <- anti_join(fuzzy_match2_min1max4$min1max4_match_found,
+          evaluated_pairs)
+
+```
+
+Evaluating correct matches
+```{r}
+fuzzy_match2_min1max4_eval <- filtered_pairs %>%
+  mutate(accepted_match = c(rep(FALSE, 7), 
+                            TRUE, 
+                            rep(FALSE, 26), 
+                            TRUE, 
+                            rep(FALSE, 83), 
+                            TRUE, 
+                            rep(FALSE, 53)))
+```
+
+Adding correct matches to synonymy
+```{r}
+final_synonymy <- final_synonymy %>%
+  bind_rows(select(filter(fuzzy_match2_min1max4_eval, 
+              accepted_match == TRUE),
+       -accepted_match))
+```
+
+
+
+
+### Specific step
+
+```{r}
+pbdb_different_names <- pbdb_taxa %>%
+  select(pbdb_accepted_name,
+         pbdb_internal_synonym) %>%
+  distinct() %>%
+  filter(pbdb_accepted_name != pbdb_internal_synonym)
+
+pbdb_subgenus_names <- pbdb_taxa %>%
+  filter(str_detect(pbdb_accepted_name, pattern = "\\(") | 
+           str_detect(pbdb_internal_synonym, pattern = "\\("))
+```
+
+
