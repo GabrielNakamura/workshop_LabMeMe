@@ -1,0 +1,360 @@
+---
+title: "Harmonization functions and guide"
+author: "Thaís Gomes Piazza Faria"
+format: html
+editor: source
+---
+
+## Info
+
+This is a script with functions and a step-by-step guide to match and combine the accepted taxonomic names of any 2 databases. It requires the packages `dplyr`, `tidyr`, `stringr` and `fuzzyjoin` , as well as two data frames containing a list of names to be combined. It was planned to be used with names ranking up to genus (genus, subgenus, species and subspecies), and all names should, ideally, belong to the same rank. Also, the names should be clean and formatted beforehand to ensure the best results, for the matching process is done considering both identical matches and slight variations in spelling between the databases. For more information on what the clean names should look like, see the `separate_name_parts` section.
+
+For the step-by-step guide, the fossil occurrence databases PBDB and NOW will be used. Note that this guide does not involve the use of taxonomic synonyms (yet), only the accepted names according to each database.
+
+**Adicionar:**
+
+-   [ ] Checagem da coluna de autores
+-   [ ] Explicação da função harmonize_exact_match
+-   [ ] Checar o que acontece caso a pessoa chegue com uma lista de nomes repetidos
+
+## Loading data and packages
+
+```{r}
+# Using the package `groundhog` to control package versions. The package `tidylog` is optional and provides useful information on the results of the matching operations.
+
+library(groundhog)
+groundhog.day <- "2025-04-01"
+groundhog.packages <- c("here",
+                        "dplyr",
+                        "stringr",
+                        "fuzzyjoin",
+                        "tidylog")
+
+groundhog.library(groundhog.packages,
+                  groundhog.day)
+rm(groundhog.day,
+   groundhog.packages)
+
+# Loading clean data and selecting needed columns
+
+pbdb_taxa <- read.csv(here("data",
+                           "processed",
+                           "pbdb_occs_species-names_2025-04-03.csv")) %>%
+  select(pbdb_accepted_name,
+         pbdb_internal_synonym,
+         pbdb_accepted_rank) %>%
+  distinct()
+
+now_taxa <- read.csv(here("data",
+                          "processed",
+                          "now_occs_species-names_2025-04-03.csv")) %>%
+  select(now_accepted_name,
+         now_accepted_rank) %>%
+  distinct()
+```
+
+## Support Functions
+
+### separate_name_parts
+
+This function splits a species name into 4 possible parts: genus, subgenus, species epithet and subspecies epithet, each on its own column. It requires the packages `dplyr` and `tidyr`. It's arguments are:
+
+-   `data` = Your occurrence data frame.
+-   `accepted_name_col` = A string. The name of the column with the occurrences' accepted name.
+-   `base_suffix` = A string. The suffix to be added to the new columns' names indicating the base the names come from. It's useful in case you want to find name matches between different bases.
+-   `delim` = A string. The separator used to separate each part of the name, like a simple space `" "`, or symbols like `"_"`.
+
+**Requirements for correct results:**
+
+The function accepts names with the following formats:
+
+-   `Genus`
+-   `Genus (Subgenus)`
+-   `Genus (Subgenus) species`
+-   `Genus (Subgenus) species subspecies`
+-   `Genus species`
+-   `Genus species subspecies`
+
+Which means that each line must have a single name and no resolution markers or comments. In case there is a subgenus portion, it must be enclosed in parenthesis. Here are some bad examples:
+
+-   `Homo sapiens cf. sapiens`
+-   `Homo sapiens/Homo neanderthalensis`
+-   `Homo sp. (large)`
+-   `Daphoenodon Borocyon robustum`
+
+```{r}
+separate_name_parts <- function(data,
+                                name_col,
+                                base_suffix,
+                                delim) {
+  
+  #Separate genus part from the rest
+    dtf <- data %>%
+    separate_wider_delim(cols = name_col,
+                         delim = delim,
+                         names = c("suffix_genus", "suffix_other"),
+                         too_many = "merge",
+                         too_few = "align_start",
+                         cols_remove = FALSE)
+    
+  #Separate subgenus part from the rest and clean markers
+  dtf <- dtf %>%
+    separate_wider_delim(cols = "suffix_other",
+                         delim = ")",
+                         names = c("suffix_subgenus", "suffix_other"),
+                         too_few = "align_end") %>%
+    mutate(suffix_subgenus = str_replace_all(suffix_subgenus,
+                                             pattern = "\\(",
+                                             replacement = ""),
+           suffix_other = str_replace(suffix_other,
+                                      pattern = paste0("^", delim),
+                                      replacement = ""))
+  
+  #Separate species and subspecies epithets
+  dtf <- dtf %>%
+    separate_wider_delim(cols = "suffix_other",
+                         delim = delim,
+                         names = c("suffix_speciesEpiteth",
+                                   "suffix_subspeciesEpiteth"),
+                         too_few = "align_start")
+  
+  colnames(dtf) <- str_replace_all(colnames(dtf), 
+                                   pattern = "suffix", 
+                                   replacement = base_suffix)
+  
+  return(dtf)
+  }
+```
+
+### harmonize_exact_match
+
+Escrever explicação aqui
+
+```{r}
+harmonize_exact_match <- function(base1_dtf,
+                                  base2_dtf,
+                                  base1_suffix,
+                                  base2_suffix,
+                                  base1_col,
+                                  base2_col) {
+  
+  #Preparing needed objects to use the name columns on the functions full_join() and select()
+  by_cols <- base2_col
+  names(by_cols) <- base1_col
+  
+  select_cols <- c(base1_col, base2_col)
+  
+  #Performing exact match of names between the 2 bases, creating flag columns and filtering table for distinct rows
+  match_exact <- full_join(base1_dtf, base2_dtf,
+                           by = by_cols,
+                           keep = TRUE) %>%
+    mutate(base1_present = !is.na(eval(parse(text = base1_col))),
+           base2_present = !is.na(eval(parse(text = base2_col)))) %>%
+    distinct()
+  
+  # Filtering identical names matched between bases, creating the information columns "string_distance" for the number of different characters between matched names, which is 0 for exact matches, and "match_notes" for a quick comment on what's happening with each combination, which again is an exact match. Finally, selecting the entered name columns and the information columns.
+  
+  exact_match_found <- match_exact  %>%
+    filter(base1_present == TRUE & base2_present == TRUE) %>%
+    mutate(string_distance = 0,
+           match_notes = "exact match") %>%
+    select(all_of(select_cols),
+           string_distance,
+           match_notes)
+  
+  #Filtering the names on each base that did not find an exact match on the other
+  #base. These names can be parsed to other functions matching functions
+  base1_failed_match <- match_exact %>%
+    filter(base1_present == FALSE) %>%
+    select(any_of(colnames(base2_dtf)))
+  
+  base2_failed_match <- match_exact %>%
+    filter(base2_present == FALSE) %>%
+    select(any_of(colnames(base1_dtf)))
+  
+  #Creating a base summary of matched and unmatched names from each base
+  summ1 <- match_exact[[base1_col]] %>%
+    na.omit() %>%
+    unique() %>%
+    length()
+  
+  summ2 <- match_exact[[base2_col]] %>%
+    na.omit() %>%
+    unique() %>%
+    length()
+  
+  summ3 <- match_exact %>%
+    filter(base1_present == TRUE & base2_present == TRUE) %>%
+    nrow()
+  
+  summ_table <- data.frame(base1_count = c(summ1, summ3, NA),
+                           base1_proportion = c(NA, NA, NA),
+                           base2_count = c(summ2, summ3, NA),
+                           base2_proportion = c(NA, NA, NA))
+  summ_table[3,] <- summ_table[1,] - summ_table[2,]
+  summ_table[2] <- summ_table[1]/summ1
+  summ_table[4] <- summ_table[3]/summ2
+  
+  colnames(summ_table) <- str_replace_all(colnames(summ_table),
+                                          c("base1" = base1_suffix,
+                                            "base2" = base2_suffix))
+  
+  row.names(summ_table) <- c("unique_names",
+                             "matched_names",
+                             "unmatched_names")
+  
+  #Saving the results on a list and renaming the dataframes with failed matches
+  #with their appropriate suffixes
+  result <- list(exact_match_summary = summ_table,
+                 exact_match_found = exact_match_found,
+                 base1_exact_match_failed = base1_failed_match,
+                 base2_exact_match_failed = base2_failed_match)
+  
+  names(result) <- str_replace_all(names(result),
+                                   c("base1" = base1_suffix,
+                                     "base2" = base2_suffix))
+  
+  return(result)
+  
+  #adicionar parte de checar se o sufixo já vem no nome das colunas de nomes ou se precisa colocar
+  #adicionar a possibilidade de incluir nome de autor ou outras colunas que a pessoa quiser na tabela de exact matches
+}
+
+exact_match <- harmonize_exact_match(base1_dtf = pbdb_taxa,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_accepted_name",
+                                     base2_col = "now_accepted_name")
+```
+
+### harmonize_fuzzy_match
+
+This function matches names from two databases based on a chosen number of different characters between the names, called `string_distance`, meaning that a `string_distance == 0` corresponds to two identical names, and a `string_distance == 2` corresponds to two names with a total of 2 different characters between them. It requires the packages `dplyr`, `stringr` and `fuzzyjoin`. It's arguments are:
+
+-   `base1_dtf` = A data frame with names from your first database.
+-   `base2_dtf` = A data frame with names from your second database.
+-   `base1_suffix` = A string. A suffix to be added to column names coming from the first database
+-   `base2_suffix` = A string. A suffix to be added to column names coming from the second database
+-   `base1_col` = A string. The name of the column containing the taxonomic names from the first database.
+-   `base2_col` = A string. The name of the column containing the taxonomic names from the second database.
+-   `min_dist` = The minimum string distance to be used when matching names. The minimum possible distance is 0, which means the names are identical. However, it is recommended to use the function `harmonize_exact_match` when trying to find identical names instead, for it's more efficient and returns summary statistics of identical matches, as well as a list of names that failed the exact match test.
+-   `max_dist` = The maximum string distance to be used when matching names. Our experiences suggest that maximum of 2 is still likely to return correct matches, while a maximum of 5 is too much.
+-   `delim` = The character used to separate the taxonomic names' parts, like a space `" "` or a symbol `"_"`.
+
+```{r}
+harmonize_fuzzy_match <- function(base1_dtf,
+                                  base2_dtf,
+                                  base1_suffix,
+                                  base2_suffix,
+                                  base1_col,
+                                  base2_col,
+                                  min_dist,
+                                  max_dist,
+                                  delim) {
+  
+  #Preparing needed objects to use the name columns on the functions full_join() and select()
+  
+  by_cols <- base2_col
+  names(by_cols) <- base1_col
+  
+  select_cols <- c(base1_col, base2_col)
+  
+  base1_names <- base1_dtf[base1_col]
+  base2_names <- base2_dtf[base2_col]
+  
+  #Performing fuzzy match of names between the 2 bases, creating flag columns and filtering table for distinct rows
+  
+  match_fuzzy <- stringdist_full_join(base1_names, base2_names,
+                                      by = by_cols,
+                                      distance_col = "string_distance",
+                                      max_dist = max_dist) %>%
+    mutate(base1_present = !is.na(eval(parse(text = base1_col))),
+           base2_present = !is.na(eval(parse(text = base2_col)))) %>%
+    distinct()
+  
+  #Filtering matches based on the min and max distance set on the arguments
+  fuzzy_match_found <- match_fuzzy %>%
+    filter(string_distance >= min_dist & string_distance <= max_dist) %>%
+    select(-base1_present,
+           -base2_present) 
+  
+  # Separating name parts to make informative notes
+  fuzzy_match_found <- separate_name_parts(fuzzy_match_found, 
+                                           name_col = base1_col,
+                                           base_suffix = "base1", 
+                                           delim = delim)
+  
+  fuzzy_match_found <- separate_name_parts(fuzzy_match_found, 
+                                           name_col = base2_col,
+                                           base_suffix = "base2", 
+                                           delim = delim)
+  
+  #Using the different name parts to detect where are the differences between the matched names and create informative match notes. For instance, if the function `stringdist()` calculates a difference higher than 0 between the genera of the matched pair, the function `case_when()` will add the note "different spelling on genus" to the column `genus_dif`. If no difference is detected between the genera (= a difference of 0) than an `NA` is added the column `genus_dif`. The processes is repeated to the subgenus, species epithet and subspecies epithet of the matched pairs.
+  
+  fuzzy_match_found <- fuzzy_match_found %>%
+    mutate(genus_dif = case_when(stringdist::stringdist(base1_genus, base2_genus) > 0 ~ "different spelling on genus"),
+           subgenus_dif = case_when(stringdist::stringdist(base1_subgenus, base2_subgenus) > 0 ~ "different spelling on subgenus"),
+           speciesEpi_dif = case_when(stringdist::stringdist(base1_speciesEpiteth, base2_speciesEpiteth) > 0 ~ "different spelling on species epiteth"),
+           subspeciesEpi_dif = case_when(stringdist::stringdist(base1_subspeciesEpiteth, base2_subspeciesEpiteth) > 0 ~ "different spelling on subspecies epiteth"))
+  
+  #Gathering the notes into the `match_notes` column, cleaning NAs, selecting relevant columns for the results and adding notes to occasional 0 difference cases. 
+  fuzzy_match_found <- fuzzy_match_found %>%
+    mutate(match_notes = paste(genus_dif,
+                               subgenus_dif,
+                               speciesEpi_dif,
+                               subspeciesEpi_dif,
+                               sep = ","),
+           match_notes = str_replace_all(match_notes,
+                                         pattern = "NA,|,NA",
+                                         replacement = "")) %>%
+    select(all_of(select_cols), 
+           string_distance, 
+           match_notes) %>%
+    mutate(match_notes = case_when(string_distance == 0 ~ "exact match",
+                                   TRUE ~ match_notes))
+  
+  #Filtering names that did not find matches
+  
+  base1_dist_failed_match <- match_fuzzy %>%
+    filter(base2_present == FALSE) %>%
+    select(any_of(colnames(base1_dtf))) %>%
+    left_join(base1_dtf, by = base1_col)
+  
+  base2_dist_failed_match <- match_fuzzy %>%
+    filter(base1_present == FALSE) %>%
+    select(any_of(colnames(base2_dtf))) %>%
+    left_join(base2_dtf, by = base2_col)
+  
+  #Saving the results on a list and renaming the dataframes with failed matches with their appropriate suffixes
+  result <- list(dist_match_found = fuzzy_match_found,
+                 base1_dist_match_failed = base1_dist_failed_match,
+                 base2_dist_match_failed = base2_dist_failed_match)
+  
+  names(result) <- str_replace_all(names(result),
+                                   c("base1" = base1_suffix,
+                                     "base2" = base2_suffix))
+  
+  names(result) <- str_replace_all(names(result), 
+                                   pattern = "dist", 
+                                   replacement = paste0("min", 
+                                                        min_dist, 
+                                                        "max", 
+                                                        max_dist))
+  
+  return(result)
+  
+  #Adicionar a possibilidade de colocar mais colunas no resultado final
+  #Fazer alguma coisa com estatísticas descritivas
+}
+
+fuzzy_match <- harmonize_fuzzy_match(base1_dtf = pbdb_taxa,
+                                     base2_dtf = now_taxa,
+                                     base1_suffix = "pbdb",
+                                     base2_suffix = "now",
+                                     base1_col = "pbdb_accepted_name",
+                                     base2_col = "now_accepted_name",
+                                     min_dist = 1,
+                                     max_dist = 1,
+                                     delim = "_")
+```
