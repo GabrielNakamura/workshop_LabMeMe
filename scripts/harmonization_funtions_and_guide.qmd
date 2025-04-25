@@ -19,6 +19,10 @@ For the step-by-step guide, the fossil occurrence databases PBDB and NOW will be
 -   [ ] Explicação da função harmonize_exact_match
 -   [ ] Checar o que acontece caso a pessoa chegue com uma lista de nomes repetidos
 -   [ ] Permitir que outras colunas (tipo pbdb_internal_synonym) seja preservada no resultado dos matchings, e consertar lá na parte de passo específico
+-   [x] Criar funções para lidar com subgêneros
+-   [x] Reescrever a última parte para usar as funções de subgênero
+-   [ ] Explicação das funções de subgênero
+-   [ ] Oferecer as opções de deletar objetos que não vão mais ser usados em cada parte do script
 
 ## Loading data and packages
 
@@ -127,6 +131,66 @@ separate_name_parts <- function(data,
   
   return(dtf)
   }
+```
+
+### delete_subgenus & swap_subgenus
+
+```{r}
+
+delete_subgenus <- function(data,
+                                name_col,
+                                delim) {
+
+  dtf <- data %>%
+  filter(str_detect(eval(parse(text = name_col)), pattern = "\\(")) %>%
+  mutate(col_copy = eval(parse(text = name_col)),
+         col_copy = str_replace_all(col_copy, 
+                                                 pattern = paste0(delim, 
+                                                                  "\\(.*\\)"),
+                                                 replacement = ""))
+colnames(dtf) <- str_replace(colnames(dtf), 
+                             pattern = "col_copy", 
+                             replacement = paste0(name_col, "_delSubgen"))
+if (nrow(dtf) == 0) {
+  warning("No taxonomic names containing a subgenus portion enclosed in parentheses found, returning an empty dataframe")
+}
+
+return(dtf)
+}
+
+#pbdb_taxa_del_subgen <- delete_subgenus(pbdb_taxa, 
+#                         name_col = "pbdb_accepted_name",
+#                         delim = "_")
+```
+
+```{r}
+swap_subgenus <- function(data,
+                                name_col,
+                                delim) {
+
+
+dtf <- data %>%
+  filter(str_detect(eval(parse(text = name_col)), pattern = "\\(")) 
+
+dtf <- dtf %>%
+  mutate(col_copy = eval(parse(text = name_col)),
+         col_copy = str_replace_all(col_copy,
+                                            c(".*\\(" = "", 
+                                              "\\)" = "")))
+
+colnames(dtf) <- str_replace(colnames(dtf), 
+                             pattern = "col_copy", 
+                             replacement = paste0(name_col, "_swapSubgen"))
+
+if (nrow(dtf) == 0) {
+  warning("No taxonomic names containing a subgenus portion enclosed in parentheses found, returning an empty dataframe")
+}
+ return(dtf)
+}
+
+#pbdb_taxa_swap_subgen <- swap_subgenus(pbdb_taxa, 
+#                         name_col = "pbdb_accepted_name",
+#                         delim = "_")
 ```
 
 ### harmonize_exact_match
@@ -576,7 +640,7 @@ pbdb_different_names <- pbdb_taxa %>%
 ```
 
 ```{r}
-exact_match1 <- harmonize_exact_match(base1_dtf = pbdb_taxa,
+exact_match1 <- harmonize_exact_match(base1_dtf = pbdb_different_names,
                                      base2_dtf = now_taxa,
                                      base1_suffix = "pbdb",
                                      base2_suffix = "now",
@@ -585,7 +649,7 @@ exact_match1 <- harmonize_exact_match(base1_dtf = pbdb_taxa,
 ```
 
 ```{r}
-a <- exact_match1$exact_match_found %>%
+exact_match1 <- exact_match1$exact_match_found %>%
   filter(pbdb_internal_synonym %in% pbdb_different_names$pbdb_internal_synonym) %>%
   left_join(pbdb_taxa[c("pbdb_accepted_name", 
                          "pbdb_internal_synonym")])
@@ -596,7 +660,7 @@ final_synonymy <- left_join(final_synonymy,
                             pbdb_taxa[c("pbdb_accepted_name",
                                         "pbdb_internal_synonym")]) %>%
   distinct() %>%
-  bind_rows(a)
+  bind_rows(exact_match1)
 
 ```
 
@@ -628,51 +692,53 @@ final_synonymy <- final_synonymy %>%
 #### Checking possible matches when deleting or swapping subgenus
 
 ```{r}
-pbdb_subgenus_deleted <- pbdb_taxa %>%
-  filter(str_detect(pbdb_accepted_name, pattern = "\\(") | 
-           str_detect(pbdb_internal_synonym, pattern = "\\(")) %>%
-  mutate(pbdb_accepted_name_copy = pbdb_accepted_name,
-         pbdb_internal_synonym_copy = pbdb_internal_synonym,
-         across(contains("_copy"),
-                ~str_replace_all(., pattern = "_\\(.*\\)", 
-                                 replacement = "")))
-pbdb_subgenus_swapped <- pbdb_taxa %>%
-  filter(str_detect(pbdb_accepted_name, pattern = "\\(") | 
-           str_detect(pbdb_internal_synonym, pattern = "\\(")) %>%
-  mutate(pbdb_accepted_name_copy = pbdb_accepted_name,
-         pbdb_internal_synonym_copy = pbdb_internal_synonym,
-         across(contains("_copy"),
-                ~str_replace_all(., c(".*\\(" = "",
-                                      "\\)" = ""))))
+subgenus_names <- pbdb_taxa %>%
+  filter(str_detect(pbdb_accepted_name, pattern = "\\(") |
+         str_detect(pbdb_internal_synonym, pattern = "\\(")) 
+
+subgenus_alternatives1 <- subgenus_names %>%
+  swap_subgenus(name_col = "pbdb_accepted_name",
+                delim = "_") %>%
+  right_join(.,subgenus_names) %>%
+  delete_subgenus(name_col = "pbdb_accepted_name",
+                delim = "_")
+
+subgenus_alternatives2 <- subgenus_names %>%
+  swap_subgenus(name_col = "pbdb_internal_synonym",
+                  delim = "_") %>%
+  right_join(., subgenus_names) %>%
+  delete_subgenus(name_col = "pbdb_internal_synonym",
+                  delim = "_") %>%
+  right_join(., subgenus_names)
 ```
 
 ```{r}
-exact_match2 <- harmonize_exact_match(base1_dtf = pbdb_subgenus_deleted,
+exact_match2 <- harmonize_exact_match(base1_dtf = subgenus_alternatives1,
                                      base2_dtf = now_taxa,
                                      base1_suffix = "pbdb",
                                      base2_suffix = "now",
-                                     base1_col = "pbdb_accepted_name_copy",
+                                     base1_col = "pbdb_accepted_name_swapSubgen",
                                      base2_col = "now_accepted_name")
 
-exact_match3 <- harmonize_exact_match(base1_dtf = pbdb_subgenus_deleted,
+exact_match3 <- harmonize_exact_match(base1_dtf = subgenus_alternatives1,
                                      base2_dtf = now_taxa,
                                      base1_suffix = "pbdb",
                                      base2_suffix = "now",
-                                     base1_col = "pbdb_internal_synonym_copy",
+                                     base1_col = "pbdb_accepted_name_delSubgen",
                                      base2_col = "now_accepted_name")
 
-exact_match4 <- harmonize_exact_match(base1_dtf = pbdb_subgenus_swapped,
+exact_match4 <- harmonize_exact_match(base1_dtf = subgenus_alternatives2,
                                      base2_dtf = now_taxa,
                                      base1_suffix = "pbdb",
                                      base2_suffix = "now",
-                                     base1_col = "pbdb_accepted_name_copy",
+                                     base1_col = "pbdb_internal_synonym_swapSubgen",
                                      base2_col = "now_accepted_name")
 
-exact_match5 <- harmonize_exact_match(base1_dtf = pbdb_subgenus_swapped,
+exact_match5 <- harmonize_exact_match(base1_dtf = subgenus_alternatives2,
                                      base2_dtf = now_taxa,
                                      base1_suffix = "pbdb",
                                      base2_suffix = "now",
-                                     base1_col = "pbdb_internal_synonym_copy",
+                                     base1_col = "pbdb_internal_synonym_delSubgen",
                                      base2_col = "now_accepted_name")
 ```
 
@@ -681,57 +747,58 @@ Aqui eu to indo direto sem marcar as coisas como true, tem que arrumar depois
 ```{r}
 final_synonymy <- bind_rows(final_synonymy,
           select(left_join(exact_match2$exact_match_found, 
-                           pbdb_subgenus_deleted), 
-                 !contains("_copy")),
+                           subgenus_alternatives1), 
+                 !contains("Subgen")),
           select(left_join(exact_match3$exact_match_found, 
-                           pbdb_subgenus_deleted), 
-                 !contains("_copy")),
+                           subgenus_alternatives1), 
+                 !contains("Subgen")),
           select(left_join(exact_match4$exact_match_found, 
-                           pbdb_subgenus_swapped), 
-                 !contains("_copy")),
+                           subgenus_alternatives2), 
+                 !contains("Subgen")),
           select(left_join(exact_match5$exact_match_found, 
-                           pbdb_subgenus_swapped), 
-                 !contains("_copy"))) %>%
+                           subgenus_alternatives2), 
+                 !contains("Subgen"))) %>%
   distinct() %>%
   select(-pbdb_accepted_rank)
+
 ```
 
 ```{r}
-fuzzy_match4_min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdb_subgenus_deleted,
+fuzzy_match4_min1max4 <- harmonize_fuzzy_match(base1_dtf = subgenus_alternatives1,
                                      base2_dtf = now_taxa,
                                      base1_suffix = "pbdb",
                                      base2_suffix = "now",
-                                     base1_col = "pbdb_accepted_name_copy",
+                                     base1_col = "pbdb_accepted_name_swapSubgen",
                                      base2_col = "now_accepted_name",
                                      min_dist = 1,
                                      max_dist = 4,
                                      delim = "_")
 
-fuzzy_match5_min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdb_subgenus_deleted,
+fuzzy_match5_min1max4 <- harmonize_fuzzy_match(base1_dtf = subgenus_alternatives1,
                                      base2_dtf = now_taxa,
                                      base1_suffix = "pbdb",
                                      base2_suffix = "now",
-                                     base1_col = "pbdb_internal_synonym_copy",
+                                     base1_col = "pbdb_accepted_name_delSubgen",
                                      base2_col = "now_accepted_name",
                                      min_dist = 1,
                                      max_dist = 4,
                                      delim = "_")
 
-fuzzy_match6_min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdb_subgenus_swapped,
+fuzzy_match6_min1max4 <- harmonize_fuzzy_match(base1_dtf = subgenus_alternatives2,
                                      base2_dtf = now_taxa,
                                      base1_suffix = "pbdb",
                                      base2_suffix = "now",
-                                     base1_col = "pbdb_accepted_name_copy",
+                                     base1_col = "pbdb_internal_synonym_swapSubgen",
                                      base2_col = "now_accepted_name",
                                      min_dist = 1,
                                      max_dist = 4,
                                      delim = "_")
 
-fuzzy_match7_min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdb_subgenus_swapped,
+fuzzy_match7_min1max4 <- harmonize_fuzzy_match(base1_dtf = subgenus_alternatives2,
                                      base2_dtf = now_taxa,
                                      base1_suffix = "pbdb",
                                      base2_suffix = "now",
-                                     base1_col = "pbdb_internal_synonym_copy",
+                                     base1_col = "pbdb_internal_synonym_delSubgen",
                                      base2_col = "now_accepted_name",
                                      min_dist = 1,
                                      max_dist = 4,
@@ -739,21 +806,21 @@ fuzzy_match7_min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdb_subgenus_swapped
 ```
 
 Nenhum aqui parece válido
+
 ```{r}
 bind_rows(select(left_join(fuzzy_match4_min1max4$min1max4_match_found, 
-                           pbdb_subgenus_deleted), 
-                 !contains("_copy")),
+                           subgenus_alternatives1), 
+                 !contains("Subgen")),
           select(left_join(fuzzy_match5_min1max4$min1max4_match_found, 
-                           pbdb_subgenus_deleted), 
-                 !contains("_copy")),
+                           subgenus_alternatives1), 
+                 !contains("Subgen")),
           select(left_join(fuzzy_match6_min1max4$min1max4_match_found, 
-                           pbdb_subgenus_swapped), 
-                 !contains("_copy")),
+                           subgenus_alternatives2), 
+                 !contains("Subgen")),
           select(left_join(fuzzy_match7_min1max4$min1max4_match_found, 
-                           pbdb_subgenus_swapped), 
-                 !contains("_copy"))) %>%
+                           subgenus_alternatives2), 
+                 !contains("Subgen"))) %>%
   distinct()
 ```
-
 
 foram 35 nomes do pbdb, q correspondem a 62 ocorrências de 2195 (2,8%), e 35 nomes do now, que correspondem a 35 ocorrências de 1371 (2,55%)
