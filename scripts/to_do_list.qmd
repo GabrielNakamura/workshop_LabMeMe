@@ -1,0 +1,20 @@
+---
+title: "Tarefas"
+author: "Thaís Gomes Piazza Faria"
+format: html
+---
+
+## Harmonization functions and guide
+
+-   [ ] Checagem da coluna de autores
+-   [ ] Explicação da função harmonize_exact_match
+-   [ ] Checar o que acontece caso a pessoa chegue com uma lista de nomes repetidos
+-   [ ] Permitir que outras colunas (tipo pbdb_internal_synonym) seja preservada no resultado dos matchings, e consertar lá na parte de passo específico
+-   [x] Criar funções para lidar com subgêneros
+-   [x] Reescrever a última parte para usar as funções de subgênero
+-   [ ] Explicação das funções de subgênero
+-   [ ] Oferecer as opções de deletar objetos que não vão mais ser usados em cada parte do script
+
+## preparation_pbdb_synonymy
+
+-   [ ] Traduzir os textos em português
