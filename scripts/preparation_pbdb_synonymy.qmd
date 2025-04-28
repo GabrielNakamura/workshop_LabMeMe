@@ -1,0 +1,177 @@
+---
+title: "preparation_pbdb_synonymy"
+author: "Thaís Gomes Piazza Faria"
+format: html
+---
+## Info
+
+## Preparation
+
+### Loading packages
+
+Using the package `groundhog` to control package versions. The package `tidylog` is optional and provides useful information on the results of the matching operations.
+```{r}
+
+library(groundhog)
+groundhog.day <- "2025-04-01"
+groundhog.packages <- c("here",
+                        "dplyr",
+                        "stringr",
+                        "fuzzyjoin",
+                        "tidylog")
+
+groundhog.library(groundhog.packages,
+                  groundhog.day)
+rm(groundhog.day,
+   groundhog.packages)
+```
+
+### Loading data
+
+Loading clean data and selecting needed columns
+```{r}
+pbdb_taxa <- read.csv(here("data",
+                           "raw",
+                           "pbdb_taxa_2025-04-03_raw.csv"), 
+                      skip = 17) %>%
+  select(flags, 
+         taxon_rank,
+         taxon_name, 
+         taxon_attr,
+         difference,
+         accepted_rank,
+         accepted_name,
+         parent_name,
+         immpar_name, 
+         phylum,
+         class,
+         order,
+         family,
+         genus) %>%
+    distinct()
+```
+
+### Preparing cleaning vectors
+
+Cleaning some typos right away helps reducing the amount of manual checking later
+```{r}
+info_typo_fix_vct <- c("Cusafont" = "Crusafont",
+                       "Geoffroy-Saint-Hillaire" = "Geoffroy-Saint-Hilaire",
+                       "Pockock" = "Pocock",
+                       "Rossenbüller" = "Rosenmüller",
+                       "Solunias" = "Solounias", #https://sjpp.springeropen.com/articles/10.1007/s13358-012-0042-y
+                       "Zimmerman " = "Zimmermann ",
+                       "Kretsoi" = "Kretzoi",
+                       "Croziet" = "Croizet",
+                       "Eherenberg" = "Ehrenberg",
+                       "Ferrusquı" = "Ferrusquia",
+                       "Teilard" = "Teilhard",
+                       "Linneaus" = "Linnaeus",
+                       "Jiangzou" = "Jiangzuo",
+                       "Pertényi" = "Petényi",
+                       "Nillson" = "Nilsson",
+                       "Shultz" = "Schultz",
+                       "Bones" = "Bonis",
+                       "Hendy" = "Hendey")
+```
+
+### Basic initial cleaning
+
+Filtering rank of interest, replacing typos (and turning blank cells into NAs to clearly signal lack of data?)
+```{r}
+pbdb_taxa <- pbdb_taxa %>%
+  filter(accepted_rank == "species") %>%
+  mutate(across(where(is.character),
+                ~str_replace_all(., info_typo_fix_vct))#,
+         #across(where(is.character),
+         #      ~na_if(., y = ""))
+         ) %>%
+  distinct()
+```
+
+## Data Wrangling
+
+### Formated taxa authority 
+
+O PBDB não tem uma coluna de autoria dos accepted_name, só dos taxon_name, porque todo accepted_name também é um taxon_name com autoria. A ideia aqui é filtrar os taxon_name que também são accepted_name e usar a autoria do taxon_name pra criar a coluna de accepted_authority. O primeiro passo é marcar que nomes de autor têm parênteses em uma nova coluna para começar a padronização do nome dos autores.
+
+```{r}
+#Creating a column to flag that the author's name is enclosed in parentheses
+
+pbdb_taxa <- pbdb_taxa %>%
+  mutate(pbdb_taxon_author_parentheses = case_when(
+    str_detect(taxon_attr,
+               pattern = "\\(") ~ TRUE,
+    !str_detect(taxon_attr,
+                pattern = "\\(") ~ FALSE))
+
+# Creating a column to format the taxon authority. First, we delete the parentheses and fix any double, beginning or trailling spaces on the names
+pbdb_taxa <- pbdb_taxa %>%
+  mutate(taxon_attr_format = str_squish(str_replace_all(taxon_attr,
+                                                        pattern = "\\(|\\)|,|\\.",
+                                                        replacement = "")))
+
+#Preparing to separate authority year from author name using the case_when() function as a vectorized if-else operation. First, we find the cells with year information and tag the space between the author's name and the year with a "~" for later separation of columns. Second, we find the cells with no alpha-numeric characters (indicating they are blank) and write "No-author-info" to them, and lastly, we leave all other cells as they are.
+
+pbdb_taxa <- pbdb_taxa %>%
+  mutate(taxon_attr_format = case_when(
+    str_detect(taxon_attr_format, 
+               pattern = "[:digit:]") ~ stringi::stri_replace_last_fixed(taxon_attr_format, pattern = " ", replacement = "~"),
+    !str_detect(taxon_attr_format, 
+               pattern = "[:alpha:]") ~ "No-author-info",
+TRUE ~ taxon_attr_format
+  ))
+
+#Separating the authority into two columns, one for the names, and one for the year
+pbdb_taxa <- pbdb_taxa %>%
+  separate_wider_delim(taxon_attr_format, 
+                       names = c("pbdb_taxon_author_name", 
+                                 "pbdb_taxon_author_year"), 
+                       delim = "~", 
+                       too_few = "align_start")
+
+#Finally, we perform a series of string transformations and replacements to standardize the names as much as possible without losing information. First, we remove any non ASCII characters, then we change all letters to upper-case to avoid any mistakes in capitalization, and use "_" to separate different names and "-" to separate compound names. Becase "et al" is a specific expression, we use "-" to separate the two words, and a "_" to separate the whole expression from anything else. These markers can be used to separate different author names in the future, if necessary.
+
+pbdb_taxa <- pbdb_taxa %>% 
+  mutate(pbdb_taxon_author_name = stringi:: stri_trans_general(pbdb_taxon_author_name, "Latin-ASCII"),
+         pbdb_taxon_author_name = toupper(pbdb_taxon_author_name),
+         pbdb_taxon_author_name = str_replace_all(pbdb_taxon_author_name,
+                                                            pattern = " ET AL",
+                                                            replacement = "_ET-AL"),
+         pbdb_taxon_author_name = str_replace_all(pbdb_taxon_author_name,
+                                                            pattern = " AND ",
+                                                            replacement = "_"),
+         pbdb_taxon_author_name = str_replace_all(pbdb_taxon_author_name,
+                                                            pattern = " AND_",
+                                                            replacement = "_"),
+         pbdb_taxon_author_name = str_replace_all(pbdb_taxon_author_name,
+                                                            pattern = " ",
+                                                            replacement = "-"))
+```
+
+Creating columns of accepted names' authorities
+```{r}
+accepted_authors <- pbdb_taxa %>%
+  filter(taxon_name == accepted_name) %>%
+  select(accepted_name,
+         pbdb_taxon_author_parentheses,
+         pbdb_taxon_author_name,
+         pbdb_taxon_author_year) %>%
+  distinct()
+
+colnames(accepted_authors) <- str_replace_all(colnames(a),
+                               pattern = "taxon",
+                               replacement = "accepted")
+
+pbdb_taxa <- full_join(pbdb_taxa, accepted_authors)
+```
+
+## Saving dataframe
+
+```{r}
+write.csv(pbdb_taxa,
+          file = here("data",
+                      "processed",
+                      "pbdb_taxa_species-names_2025-04-03.csv"))
+```
+

@@ -18,3 +18,4 @@ format: html
 ## preparation_pbdb_synonymy
 
 -   [ ] Traduzir os textos em português
+-   [ ] Transformar em uma única função que permite escolher o rank taxonômico
