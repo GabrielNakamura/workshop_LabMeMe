@@ -18,4 +18,6 @@ format: html
 ## preparation_pbdb_synonymy
 
 -   [ ] Traduzir os textos em português
--   [ ] Transformar em uma única função que permite escolher o rank taxonômico
+-   [ ] Transformar em uma única função que permite escolher o rank taxonômico OU
+    -   [x] Transformar em uma função simples de formatação de nomes de autores
+-   [ ] Adicionar as partes que Lucas e Carlos colocam nos scripts deles
