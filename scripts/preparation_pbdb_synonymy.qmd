@@ -55,24 +55,24 @@ pbdb_taxa <- read.csv(here("data",
 
 Cleaning some typos right away helps reducing the amount of manual checking later
 ```{r}
-info_typo_fix_vct <- c("Cusafont" = "Crusafont",
-                       "Geoffroy-Saint-Hillaire" = "Geoffroy-Saint-Hilaire",
-                       "Pockock" = "Pocock",
-                       "Rossenbüller" = "Rosenmüller",
-                       "Solunias" = "Solounias", #https://sjpp.springeropen.com/articles/10.1007/s13358-012-0042-y
-                       "Zimmerman " = "Zimmermann ",
-                       "Kretsoi" = "Kretzoi",
+info_typo_fix_vct <- c("Bones" = "Bonis",
                        "Croziet" = "Croizet",
+                       "Cusafont" = "Crusafont",
                        "Eherenberg" = "Ehrenberg",
                        "Ferrusquı" = "Ferrusquia",
-                       "Teilard" = "Teilhard",
-                       "Linneaus" = "Linnaeus",
+                       "Geoffroy-Saint-Hillaire" = "Geoffroy-Saint-Hilaire",
+                       "Hendy" = "Hendey",
                        "Jiangzou" = "Jiangzuo",
-                       "Pertényi" = "Petényi",
+                       "Kretsoi" = "Kretzoi",
+                       "Linneaus" = "Linnaeus",
                        "Nillson" = "Nilsson",
+                       "Pertényi" = "Petényi",
+                       "Pockock" = "Pocock",
+                       "Rossenbüller" = "Rosenmüller",
                        "Shultz" = "Schultz",
-                       "Bones" = "Bonis",
-                       "Hendy" = "Hendey")
+                       "Solunias" = "Solounias", #https://sjpp.springeropen.com/articles/10.1007/s13358-012-0042-y
+                       "Teilard" = "Teilhard",
+                       "Zimmerman" = "Zimmermann")
 ```
 
 ### Basic initial cleaning
@@ -119,6 +119,7 @@ pbdb_taxa <- pbdb_taxa %>%
                pattern = "[:digit:]") ~ stringi::stri_replace_last_fixed(taxon_attr_format, pattern = " ", replacement = "~"),
     !str_detect(taxon_attr_format, 
                pattern = "[:alpha:]") ~ "No-author-info",
+    is.na(taxon_attr_format) ~ "No-author-info",
 TRUE ~ taxon_attr_format
   ))
 
@@ -166,12 +167,80 @@ colnames(accepted_authors) <- str_replace_all(colnames(a),
 pbdb_taxa <- full_join(pbdb_taxa, accepted_authors)
 ```
 
+## Author formatting function
+
+```{r}
+
+pbdb_attr_format <- function(x,
+                             attr_col,
+                             names_to_lowercase = NULL){
+  
+  if (!is.data.frame(x)) {stop('"x" must be a dataframe')}
+  if (!attr_col %in% colnames(x)) {stop("Column ", attr_col, " not found")}
+
+  dtf <- x %>%
+  mutate(parentheses = case_when(
+    str_detect(eval(parse(text = attr_col)),
+               pattern = "\\(") ~ TRUE,
+    !str_detect(eval(parse(text = attr_col)),
+                pattern = "\\(") ~ FALSE)) %>%
+  mutate(attr_format = str_squish(str_replace_all(eval(parse(text = attr_col)),
+                                                  pattern = "\\(|\\)|,|\\.",
+                                                  replacement = ""))) %>%
+  mutate(attr_format = case_when(
+    str_detect(attr_format, 
+               pattern = "[:digit:]") ~ stringi::stri_replace_last_fixed(attr_format,
+                                                                         pattern = " ", 
+                                                                         replacement = "~"),
+    !str_detect(attr_format, 
+                pattern = "[:alpha:]") ~ "No-author-info",
+    is.na(attr_format) ~ "No-author-info",
+    TRUE ~ attr_format
+  )) %>%
+  separate_wider_delim(attr_format, 
+                       names = c("author_name", 
+                                 "author_year"), 
+                       delim = "~", 
+                       too_few = "align_start") %>% 
+  mutate(author_name = stringi:: stri_trans_general(author_name,
+                                                    "Latin-ASCII"),
+         author_name = toupper(author_name),
+         author_name = str_replace_all(author_name,
+                                       pattern = " ET AL",
+                                       replacement = "_ET-AL"),
+         author_name = str_replace_all(author_name,
+                                       pattern = " AND ",
+                                       replacement = "_"),
+         author_name = str_replace_all(author_name,
+                                       pattern = " AND_",
+                                       replacement = "_"),
+         author_name = str_replace_all(author_name,
+                                       pattern = " ",
+                                       replacement = "-"))
+  
+  if (!is.null(names_to_lowercase)) {
+    if (is.logical(names_to_lowercase)){
+      if (names_to_lowercase == TRUE) {
+      dtf$author_name <- tolower(dtf$author_name)
+     }
+    } else {
+      warning('"names_to_lowercase" must be logical. Returning column "author_name" in default uppercase')
+      }
+  }
+
+ return(dtf)
+  
+}
+```
+
+
 ## Saving dataframe
 
 ```{r}
 write.csv(pbdb_taxa,
           file = here("data",
                       "processed",
-                      "pbdb_taxa_species-names_2025-04-03.csv"))
+                      "pbdb_taxa_species-names_2025-04-03.csv"),
+          row.names = FALSE)
 ```
 
