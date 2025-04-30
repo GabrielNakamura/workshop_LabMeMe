@@ -13,7 +13,13 @@ format: html
 -   [x] Criar funções para lidar com subgêneros
 -   [x] Reescrever a última parte para usar as funções de subgênero
 -   [ ] Explicação das funções de subgênero
--   [ ] Oferecer as opções de deletar objetos que não vão mais ser usados em cada parte do script
+-   [x] Oferecer as opções de deletar objetos que não vão mais ser usados em cada parte do script
+-   [ ] Oferecer uma função de checagem de sinônimos numa sinonímia atribuídos a mais de um nome aceito (caso de pbdb_taxon_name == "Canis variabilis")
+-   [x] Transformar o trecho de passar pra sinonímia os aceitos em uma função, e adicionar um distinct() no final
+    -   [ ] Escrever instruções direitinho
+    -   [ ] Colocar umas checagens de argumentos
+-   [ ] Arrumar os nomes das variáveis na parte específica
+-   [ ] Adicionar a coluna do nome aceito na sinonímia do lado do sinônimo
 
 ## preparation_pbdb_synonymy
 
