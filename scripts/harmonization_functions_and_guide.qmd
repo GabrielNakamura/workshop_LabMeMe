@@ -650,11 +650,17 @@ Adding correct matches to synonymy
 finalSynonymy.1 <- add_to_synonymy(finalSynonymy.1, fuzzy.1b.min1max4.eval)
 ```
 
+Gathering all pair evaluations for this part
+
 ```{r}
-rm(fuzzy.1b.min1max4) 
-   #fuzzy.1b.min1max4.eval)
+fuzzy.1.eval <- bind_rows(fuzzy.1a.eval, fuzzy.1b.min1max4.eval)
 ```
 
+```{r}
+rm(fuzzy.1b.min1max4, 
+   fuzzy.1b.min1max4.eval, 
+   fuzzy.1a.eval)
+```
 #### Specific step
 
 ##### Checking alternative PBDB genus combination
@@ -1066,11 +1072,14 @@ rm(fuzzy.2a.min1max1.eval,
 
 ##### Using the full list of names at once
 
+```{r}
+nowOccNames.unmatched.b <- anti_join(nowOccNames.unmatched, finalSynonymy.2)
+```
 String difference of 1 to 4
 
 ```{r}
 fuzzy.2b.min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdbTaxNames,
-                                          base2_dtf = nowOccNames.unmatched,
+                                          base2_dtf = nowOccNames.unmatched.b,
                                           base1_suffix = "pbdb",
                                           base2_suffix = "now",
                                           base1_col = "pbdb_taxon_name",
@@ -1092,30 +1101,7 @@ Evaluating correct matches
 ```{r}
 fuzzy.2b.min1max4.eval <- fuzzy.2b.min1max4.eval %>%
   mutate(accepted_match = case_when(
-    pbdb_taxon_name == "Parenhydrocyon_josephi" & now_accepted_name == "Paraenhydrocyon_josephi" | 
-      pbdb_taxon_name == "Sminthosinus_bowleri" & now_accepted_name == "Sminthosinis_bowleri" | 
-      pbdb_taxon_name == "Deinictis_felina" & now_accepted_name == "Dinictis_felina" | 
-      pbdb_taxon_name == "Deinictis_cyclops" & now_accepted_name == "Dinictis_cyclops" | 
-      pbdb_taxon_name == "Lontra_canadensis" & now_accepted_name == "Lutra_canadensis" | 
-      pbdb_taxon_name == "Athylax_paludinosus" & now_accepted_name == "Atilax_paludinosus" | 
-      pbdb_taxon_name == "Amblonyx_cinerea" & now_accepted_name == "Aonyx_cinerea" | 
-      pbdb_taxon_name == "Brachypsaloides_modicus" & now_accepted_name == "Brachypsalis_modicus" | 
-      pbdb_taxon_name == "Ictonyx_capensis" & now_accepted_name == "Aonyx_capensis" | 
-      pbdb_taxon_name == "Mustela_madisonae" & now_accepted_name == "Miomustela_madisonae" | 
-      pbdb_taxon_name == "Phoca_hispida" & now_accepted_name == "Pusa_hispida" | 
-      pbdb_taxon_name == "Pontoleon_magnus" & now_accepted_name == "Pontolis_magnus" | 
-      pbdb_taxon_name == "Palaeogale_minuta" & now_accepted_name == "Palaeogale_minutus" | 
-      pbdb_taxon_name == "Palaeogale_minuta" & now_accepted_name == "Palaeogale_minutus" | 
-      pbdb_taxon_name == "Palaeogale_minuta" & now_accepted_name == "Palaeogale_minutus" | 
-      pbdb_taxon_name == "Palaeogale_minuta" & now_accepted_name == "Palaeogale_minutus" | 
-    
-      pbdb_taxon_name == "Palaeogale_minuta" & now_accepted_name == "Palaeogale_minutus" | 
-      pbdb_taxon_name == "Plionictis_oaxacaensis" & now_accepted_name == "Plionictis_oaxaquenis" ~ TRUE,
-      #pbdb_taxon_name == "Cyon_antiquus" & now_accepted_name == "Cuon_antiquus" |
-      #pbdb_taxon_name == "Vulpes_vulgaris" & now_accepted_name == "Vulpes_vulpes" |
-      #pbdb_taxon_name == "Subparictis_dakotensis" & now_accepted_name == "Parictis_dakotensis" |
-      #pbdb_taxon_name == "Dinocrocuta_algeriensis" & now_accepted_name == "Percrocuta_algeriensis" |
-      #pbdb_taxon_name == "Phoca_hispida" & now_accepted_name == "Pusa_hispida"
+      pbdb_taxon_name == "Palaeogale_parvulus" & now_accepted_name == "Palaeogale_parvula" ~ TRUE,
       is.na(accepted_match) ~ FALSE,
       TRUE ~ accepted_match))
 ```
@@ -1123,10 +1109,7 @@ fuzzy.2b.min1max4.eval <- fuzzy.2b.min1max4.eval %>%
 Adding correct matches to synonymy
 
 ```{r}
-finalSynonymy.2 <- finalSynonymy.2 %>%
-  bind_rows(select(filter(fuzzy.2b.min1max4.eval, 
-              accepted_match == TRUE),
-       -accepted_match))
+finalSynonymy.2 <- add_to_synonymy(finalSynonymy.2, fuzzy.2b.min1max4.eval)
 ```
 
 ```{r}
@@ -1135,6 +1118,16 @@ rm(fuzzy.2b.min1max4,
    fuzzy.2a.eval)
 ```
 
+Gathering all pair evaluations for this part
 
+```{r}
+fuzzy.2.eval <- bind_rows(fuzzy.2a.eval, fuzzy.2b.min1max4.eval)
+```
+
+```{r}
+rm(fuzzy.2b.min1max4, 
+   fuzzy.2b.min1max4.eval, 
+   fuzzy.2a.eval)
+```
 
 
