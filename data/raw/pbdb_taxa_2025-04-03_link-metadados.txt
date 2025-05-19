@@ -1,9 +1,0 @@
-LINK PARA DOWNLOAD: 
-
-https://paleobiodb.org/data1.2/taxa/list.csv?datainfo&rowcount&base_name=Carnivora&variant=all&pres=regular&show=attr,common,app,app,parent,immparent,size,class,classext,subcounts,ecospace,taphonomy,etbasis,pres,seq,img,ref,refattr,ent,entname,crmod
-
-ATENÇÃO: Em caso de download manual, não usar a opção "Include all output blocks whose names are boldfaced below" no menu "Choose output options", pois ela pode duplicar ou excluir algumas colunas. Em vez disso, selecione cada opção de output manualmente.
-
-METADADOS DISPONÍVEIS EM:
-
-https://paleobiodb.org/data1.2/taxa/list_doc.html

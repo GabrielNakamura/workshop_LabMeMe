@@ -19,7 +19,7 @@ For the step-by-step guide, the fossil occurrence databases PBDB and NOW will be
 # Using the package `groundhog` to control package versions. The package `tidylog` is optional and provides useful information on the results of the matching operations.
 
 library(groundhog)
-groundhog.day <- "2025-04-01"
+groundhog.day <- "2025-05-01"
 groundhog.packages <- c("here",
                         "dplyr",
                         "stringr",
@@ -55,6 +55,13 @@ pbdbTaxNames <- read.csv(here("data",
          taxon_name,
          accepted_name) %>%
   distinct() #Por que tinha 8 linhas repetidas aqui?
+
+mddTaxNames <- read.csv(here("data", 
+                             "raw", 
+                             "mdd_taxa_v2.1_raw.csv")) %>%
+  filter(MDD_order == "Carnivora")
+
+
 ```
 
 ## Support Functions
@@ -1130,4 +1137,8 @@ rm(fuzzy.2b.min1max4,
    fuzzy.2a.eval)
 ```
 
+
+```{r}
+
+```
 
