@@ -18,14 +18,14 @@ groundhog.library(groundhog.packages,
 rm(groundhog.day,
    groundhog.packages)
 
-pbdb_250308_carn_raw_dtf <- read.csv(here("data",
+pbdb_250506_carn_raw_dtf <- read.csv(here("data",
                                           "raw",
-                                          "pbdb_occs_2025-04-03_raw.csv"),
+                                          "pbdb_occs_2025-05-06_raw.csv"),
                                      skip = 19)
 
 # Preparação dos dados para a harmonização
 
-pbdb_occs_names <- pbdb_250308_carn_raw_dtf %>%
+pbdb_occs_names <- pbdb_250506_carn_raw_dtf %>%
   select(identified_name, #Selecionando colunas com informação taxonômica
          difference,
          accepted_name,
@@ -74,4 +74,4 @@ write.csv(pbdb_occs_names,
           row.names = FALSE,
           file = here("data",
                       "processed",
-                      "pbdb_occs_species-names_2025-04-03.csv"))
+                      "pbdb_occs_species-names_2025-05-06.csv"))

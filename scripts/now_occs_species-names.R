@@ -21,7 +21,7 @@ rm(groundhog.day,
 
 now_data <- read.delim(here("data",
                             "raw",
-                            "now_occs_2025-04-03_raw.tsv"),
+                            "now_occs_2025-05-06_raw.csv"),
                        na.strings = "\\N")
 
 
@@ -103,7 +103,7 @@ now_species <- now_taxa %>%
 write.csv(now_species,
           file = here("data",
                       "processed",
-                      "now_occs_species-names_2025-04-03.csv"),
+                      "now_occs_species-names_2025-05-06.csv"),
           row.names = FALSE)
 
 
