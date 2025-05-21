@@ -82,7 +82,8 @@ mdd_data <- filter_mdd_synonyms()
 format_mdd_synonyms <- function(
     data = mdd_data,
     species_col = select_species_col,
-    synonyms_col = select_original_combination_col
+    synonyms_col = select_original_combination_col,
+    sep = "_"
 ){
   colnames <- colnames(data)
 
@@ -199,6 +200,15 @@ format_mdd_synonyms <- function(
                               mdd_data_species,
                               mdd_data_subgen,
                               mdd_data_subsp)
+
+  if (sep != "_"){
+
+    mdd_syns_final <- mutate(mdd_syns_final,
+                             across(everything(),
+                                    ~str_replace_all(., pattern = "_",
+                                                     replacement = sep)))
+
+  }
 
   return(list(mdd_syns_final = mdd_syns_final,
               mdd_syns_manual = mdd_syns_manual))

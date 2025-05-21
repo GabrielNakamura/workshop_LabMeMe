@@ -31,7 +31,7 @@ Loading clean data and selecting needed columns
 ```{r}
 pbdb_taxa <- read.csv(here("data",
                            "raw",
-                           "pbdb_taxa_2025-04-03_raw.csv"), 
+                           "pbdb_taxa_2025-05-06_raw.csv"), 
                       skip = 17) %>%
   select(flags, 
          taxon_rank,
@@ -239,7 +239,8 @@ pbdb_attr_format <- function(x,
 write.csv(pbdb_taxa,
           file = here("data",
                       "processed",
-                      "pbdb_taxa_species-names_2025-04-03.csv"),
+                      "pbdb_taxa_species-names_2025-05-06.csv"),
           row.names = FALSE)
+
 ```
 
