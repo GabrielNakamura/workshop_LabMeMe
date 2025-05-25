@@ -268,6 +268,10 @@ pbdb_data <- format_alternative_synonym_from_genus()
 
 gc()
 
+#### Add suffix to column names ####
+
+colnames(pbdb_data) <- paste0("pbdb_", colnames(pbdb_data))
+
 #### Save data ####
 
 write.csv(x = pbdb_data,
