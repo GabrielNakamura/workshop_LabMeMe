@@ -21,6 +21,7 @@ select_cols_to_keep <- c("MDD_order",
                          "MDD_family",
                          "MDD_genus",
                          "MDD_species",
+                         "MDD_validity",
                          "MDD_original_combination",
                          "MDD_author",
                          "MDD_year",
@@ -76,6 +77,7 @@ filter_mdd_synonyms <- function(
 }
 
 mdd_data <- filter_mdd_synonyms()
+gc()
 
 #### Original rank == c("species", "synonym_species") ####
 
@@ -216,6 +218,7 @@ format_mdd_synonyms <- function(
 }
 
 mdd_syns <- format_mdd_synonyms() #Generates a list with 2 items: 1) mdd_syns_final = correctly formatted names; 2) mdd_syns_manual = names in need of manual cleaning
+gc()
 
 #### Write CSV ####
 

@@ -81,9 +81,9 @@ Filtering rank of interest, replacing typos (and turning blank cells into NAs to
 pbdb_taxa <- pbdb_taxa %>%
   filter(accepted_rank == "species") %>%
   mutate(across(where(is.character),
-                ~str_replace_all(., info_typo_fix_vct))#,
-         #across(where(is.character),
-         #      ~na_if(., y = ""))
+                ~str_replace_all(., info_typo_fix_vct)),
+         across(where(is.character),
+               ~na_if(., y = ""))
          ) %>%
   distinct()
 ```
@@ -236,6 +236,7 @@ pbdb_attr_format <- function(x,
 ## Saving dataframe
 
 ```{r}
+
 write.csv(pbdb_taxa,
           file = here("data",
                       "processed",
