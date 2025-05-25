@@ -21,9 +21,10 @@ format: html
 -   [ ] Arrumar os nomes das variáveis na parte específica
 -   [ ] Adicionar a coluna do nome aceito na sinonímia do lado do sinônimo
 
-## preparation_pbdb_synonymy
+## pbdb_taxa_species-names
 
--   [ ] Traduzir os textos em português
--   [ ] Transformar em uma única função que permite escolher o rank taxonômico OU
-    -   [x] Transformar em uma função simples de formatação de nomes de autores
+-   [ ] transformar em .qmd comentado pro site
+-   [ ] passar as funções de apoio pra um source
 -   [ ] Adicionar as partes que Lucas e Carlos colocam nos scripts deles
+-   [ ] expandir pra outros ranks taxonômicos que não espécie
+-   [ ] transformar a parte de filtragem em uma função

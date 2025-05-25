@@ -4,7 +4,7 @@ library(here) #Operating system agnostic file paths with .Rproj
 library(stringr) #String manipulation
 library(dplyr) #Data wrangling with tidyverse syntax
 library(tidytable) #Brings the data.table package's fast operations to dplyr syntax
-library(tidylog) #Optional, prints detailed information about changes in the dataframe during data wrangling with tidyverse functions
+#library(tidylog) #Optional, prints detailed information about changes in the dataframe during data wrangling with tidyverse functions
 
 #### Loading files ####
 
@@ -236,7 +236,8 @@ gc()
 
 format_alternative_synonym_from_genus <- function(data = pbdb_data,
                                                   accepted_name_col = select_accepted_name_column,
-                                                  genus_col = select_genus_column){
+                                                  genus_col = select_genus_column,
+                                                  delim = "_"){
 
   if (!is.data.frame(data)) {stop('"data" must be a dataframe')}
   if (!accepted_name_col %in% colnames(data)) {stop("Column ", accepted_name_col, " not found")}
@@ -248,13 +249,13 @@ format_alternative_synonym_from_genus <- function(data = pbdb_data,
     distinct() %>%
     mutate(accepted_name_copy = eval(parse(text = accepted_name_col))) %>%
     separate_wider_delim(accepted_name_copy,
-                         delim = "_",
+                         delim = delim,
                          names = c("accepted_genus",
                                    "rest"),
                          too_many = "merge") %>%
     mutate(alternative_synonym = paste(eval(parse(text = genus_col)),
                                        rest ,
-                                       sep = "_"),
+                                       sep = delim),
            genus_difference = eval(parse(text = accepted_name_col)) != alternative_synonym) %>%
     select(-accepted_genus,
            -rest) %>%
