@@ -1,7 +1,7 @@
 #### Carregando pacotes com controle de versão ####
 
 library(groundhog)
-groundhog.day <- "2025-04-01"
+groundhog.day <- "2025-05-01"
 groundhog.packages <- c("here",
                         "dplyr",
                         "stringr",
@@ -11,6 +11,8 @@ groundhog.library(groundhog.packages,
                   groundhog.day)
 rm(groundhog.day,
    groundhog.packages)
+
+library(countrycode)
 
 #### Limpeza inicial ####
 
@@ -60,9 +62,10 @@ now_taxa <- now_data %>%
          FAMILY,
          SUBFAMILY,
          GENUS,
-         SPECIES) %>%
+         SPECIES,
+         SIDNUM) %>%
   distinct() %>% #Filtrando linhas com valores distintos (considerando todas as colunas)
-  mutate(across(everything(), #Aplicando a função indet_fix em todas as colunas da tabela
+  mutate(across(is.character, #Aplicando a função indet_fix em todas as colunas da tabela
                 ~indet_fix(.)),
          now_accepted_name = paste(GENUS, SPECIES, sep = "_")) %>% #Criando uma coluna com o nome completo das espécies separado por "_"
   mutate(now_accepted_rank = case_when( #Usando várias vezes a função case_when(), ver detalhes acima
@@ -94,10 +97,37 @@ now_taxa <- now_data %>%
                                   pattern = "_indet\\.",
                                   replacement = ""))
 
+# Preparando alguns resumos de dados sobre as ocorrências, já que o NOW não tem a autoria dos nomes
+age_by_sidnum <- now_data %>%
+  select(MIN_AGE, MAX_AGE, SIDNUM) %>%
+  distinct() %>%
+  group_by(SIDNUM) %>%
+  summarise(MAX_AGE = max(MAX_AGE),
+            MIN_AGE = min(MIN_AGE))
+
+continent_by_sidnum <- now_data %>%
+  select(COUNTRY,
+         SIDNUM) %>%
+  distinct() %>%
+  mutate(now_continent = countrycode::countrycode(COUNTRY,
+                                                  origin = "country.name.en",
+                                                  destination = "continent")) %>%
+  select(-COUNTRY) %>%
+  distinct() %>%
+  group_by(SIDNUM) %>%
+  mutate(now_continent = paste0(now_continent,
+                                collapse = " | ")) %>%
+  distinct()
+
+
 # Filtrando só as espécies para o workshop de Carnivora
 
 now_species <- now_taxa %>%
   filter(now_accepted_rank == "species")
+
+now_species <- now_species %>%
+  inner_join(age_by_sidnum) %>%
+  inner_join(continent_by_sidnum)
 
 # Salvando o arquivo
 write.csv(now_species,
@@ -105,6 +135,5 @@ write.csv(now_species,
                       "processed",
                       "now_occs_species-names_2025-05-06.csv"),
           row.names = FALSE)
-
 
 
