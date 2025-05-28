@@ -64,8 +64,10 @@ select_cols_to_keep <- c("flags",
                          "genus")
 
 #unique(pbdb_data$accepted_rank) #Uncomment to check available ranks
-select_rank_to_filter <- c("subspecies",
-                           "species")
+select_rank_to_filter <- c(
+  #"subspecies",
+  "species"
+  )
 
 select_accepted_name_column <- "accepted_name"
 select_taxon_name_column <- "taxon_name"

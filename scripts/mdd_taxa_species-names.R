@@ -227,3 +227,7 @@ write.csv(mdd_syns$mdd_syns_final,
                       "processed",
                       "mdd_taxa_species-names_v2.1.csv"),
           row.names = FALSE)
+
+rm(list = ls())
+
+gc()
