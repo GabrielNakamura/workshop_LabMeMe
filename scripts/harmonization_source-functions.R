@@ -85,6 +85,22 @@ swap_subgenus <- function(data,
   return(dtf)
 }
 
+create_alternative_with_subgenus <- function(data,
+                                             name_col,
+                                             delim = select_name_separator){
+
+  dtf <- data %>%
+    delete_subgenus(name_col,
+                  delim) %>%
+    swap_subgenus(name_col,
+                  delim) %>%
+    distinct() %>%
+    pivot_longer(cols = contains("Subgen"), values_to = "del_or_swap_subgen") %>%
+    select(-name) %>%
+    distinct()
+}
+
+
 harmonize_exact_match <- function(base1_dtf,
                                   base2_dtf,
                                   base1_suffix = b1_suffix,
@@ -104,7 +120,7 @@ harmonize_exact_match <- function(base1_dtf,
            base2_present = !is.na(eval(parse(text = base2_col)))) %>%
     distinct()
 
-  exact1_found <- match_exact  %>%
+  exact_found <- match_exact  %>%
     filter(base1_present == TRUE & base2_present == TRUE) %>%
     mutate(string_distance = 0,
            match_notes = "exact match") %>%
@@ -150,8 +166,21 @@ harmonize_exact_match <- function(base1_dtf,
                              "matched_names",
                              "unmatched_names")
 
+  exact_found <- inner_join(exact_found,
+                            base1_dtf) %>%
+    inner_join(base2_dtf) %>%
+    distinct()
+
+  base1_failed_match <- inner_join(base1_failed_match,
+                            base1_dtf) %>%
+    distinct()
+
+  base2_failed_match <- inner_join(base2_failed_match,
+                                   base2_dtf) %>%
+    distinct()
+
   result <- list(exact_summary = summ_table,
-                 exact_found = exact1_found,
+                 exact_found = exact_found,
                  base1_exact_failed = base1_failed_match,
                  base2_exact_failed = base2_failed_match)
 
@@ -171,7 +200,7 @@ harmonize_fuzzy_match <- function(base1_dtf,
                                   base2_col = b2_col,
                                   min_dist,
                                   max_dist,
-                                  delim) {
+                                  delim = select_name_separator) {
 
   by_cols <- base2_col
   names(by_cols) <- base1_col
@@ -234,6 +263,18 @@ harmonize_fuzzy_match <- function(base1_dtf,
     filter(base1_present == FALSE) %>%
     select(any_of(colnames(base2_dtf))) %>%
     left_join(base2_dtf, by = base2_col)
+
+  fuzzy_match_found <- fuzzy_match_found %>%
+    inner_join(base1_dtf) %>%
+    distinct() %>%
+    inner_join(base2_dtf) %>%
+    distinct()
+
+  base1_dist_failed_match <- base1_dist_failed_match %>%
+    inner_join(base1_dtf)
+
+  base2_dist_failed_match <- base2_dist_failed_match %>%
+    inner_join(base2_dtf)
 
   result <- list(dist_match_found = fuzzy_match_found,
                  base1_dist_match_failed = base1_dist_failed_match,
