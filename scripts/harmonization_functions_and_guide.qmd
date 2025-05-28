@@ -18,31 +18,38 @@ For the step-by-step guide, the fossil occurrence databases PBDB and NOW will be
 ```{r}
 # Using the package `groundhog` to control package versions. The package `tidylog` is optional and provides useful information on the results of the matching operations.
 
-library(groundhog)
-groundhog.day <- "2025-05-01"
-groundhog.packages <- c("here",
-                        "dplyr",
-                        "stringr",
-                        "fuzzyjoin",
-                        "tidylog")
+#library(groundhog)
+#groundhog.day <- "2025-05-01"
+#groundhog.packages <- c("here",
+#                        "dplyr",
+#                        "stringr",
+#                        "fuzzyjoin",
+#                        "tidylog")
 
-groundhog.library(groundhog.packages,
-                  groundhog.day)
-rm(groundhog.day,
-   groundhog.packages)
+#groundhog.library(groundhog.packages,
+#                  groundhog.day)
+#rm(groundhog.day,
+#   groundhog.packages)
+
+library(here)
+library(dplyr)
+library(tidytable)
+library(stringr)
+library(fuzzyjoin)
+library(tidylog)
 
 # Loading clean data and selecting needed columns
 
 nowOccNames <- read.csv(here("data",
                              "processed",
-                             "now_occs_species-names_2025-04-03.csv")) %>%
+                             "now_occs_species-names_2025-05-06.csv")) %>%
   select(now_accepted_name,
          now_accepted_rank) %>%
   distinct()
 
 pbdbOccNames <- read.csv(here("data",
                               "processed",
-                              "pbdb_occs_species-names_2025-04-03.csv")) %>%
+                              "pbdb_occs_species-names_2025-05-06.csv")) %>%
   select(pbdb_accepted_name,
          pbdb_internal_synonym,
          pbdb_accepted_rank) %>%
@@ -57,10 +64,8 @@ pbdbTaxNames <- read.csv(here("data",
   distinct() #Por que tinha 8 linhas repetidas aqui?
 
 mddTaxNames <- read.csv(here("data", 
-                             "raw", 
-                             "mdd_taxa_v2.1_raw.csv")) %>%
-  filter(MDD_order == "Carnivora")
-
+                             "processed", 
+                             "mdd_taxa_species-names_v2.1.csv"))
 
 ```
 
@@ -668,6 +673,7 @@ rm(fuzzy.1b.min1max4,
    fuzzy.1b.min1max4.eval, 
    fuzzy.1a.eval)
 ```
+
 #### Specific step
 
 ##### Checking alternative PBDB genus combination
@@ -893,7 +899,7 @@ rm(fuzzy_match4_min1max4,
 
 foram 35 nomes do pbdb, q correspondem a 62 ocorrências de 2195 (2,8%), e 35 nomes do now, que correspondem a 35 ocorrências de 1371 (2,55%)
 
-### Part 2 - Synonymy
+### Part 2 - Synonymy 1
 
 Passar essa parte pra limpeza
 ```{r}
@@ -921,7 +927,6 @@ exact.2 <- harmonize_exact_match(base1_dtf = pbdbTaxNames,
                                  base2_suffix = "now",
                                  base1_col = "pbdb_taxon_name",
                                  base2_col = "now_accepted_name")
-
 exact.2$exact_summary
 ```
 
@@ -1047,7 +1052,10 @@ Evaluating correct matches
 
 ```{r}
 fuzzy.2a.min4max4.eval <- fuzzy.2a.min4max4$min4max4_match_found %>%
-  mutate(accepted_match = FALSE)
+  mutate(accepted_match = case_when(
+    pbdb_taxon_name == "Lutra_palaeoleptonyx" & now_accepted_name == "Lutrogale_palaeoleptonyx" ~ TRUE,
+    TRUE ~ FALSE
+  ))
 ```
 
 Adding correct matches to synonymy
@@ -1119,12 +1127,6 @@ Adding correct matches to synonymy
 finalSynonymy.2 <- add_to_synonymy(finalSynonymy.2, fuzzy.2b.min1max4.eval)
 ```
 
-```{r}
-rm(fuzzy.2b.min1max4, 
-   fuzzy.2b.min1max4.eval, 
-   fuzzy.2a.eval)
-```
-
 Gathering all pair evaluations for this part
 
 ```{r}
@@ -1138,7 +1140,301 @@ rm(fuzzy.2b.min1max4,
 ```
 
 
+#### Specific step
+
 ```{r}
+finalSynonymy <- finalSynonymy.1 %>%
+  mutate(pbdb_taxon_name = pbdb_accepted_name, 
+         match_notes = paste0(match_notes, (" (accepted occ name)"))) %>%
+  left_join(distinct(select(pbdbTaxNames, pbdb_taxon_name, pbdb_family))) %>%
+  bind_rows(left_join(mutate(finalSynonymy.2, match_notes = paste0(match_notes, " (taxon name)")), pbdbTaxNames)) %>%
+  distinct() %>%
+  select(pbdb_family, 
+         pbdb_accepted_name, 
+         pbdb_taxon_name, 
+         now_accepted_name, 
+         string_distance, 
+         match_notes)
+
+evaluatedPairs <- fuzzy.1.eval %>%
+  mutate(pbdb_taxon_name = pbdb_accepted_name, 
+         match_notes = paste0(match_notes, (" (accepted occ name)"))) %>%
+  left_join(distinct(select(pbdbTaxNames, pbdb_taxon_name, pbdb_family))) %>%
+  bind_rows(left_join(mutate(fuzzy.2.eval, match_notes = paste0(match_notes, " (taxon name)")), pbdbTaxNames)) %>%
+  distinct() %>%
+  select(accepted_match,
+         pbdb_family, 
+         pbdb_accepted_name, 
+         pbdb_taxon_name, 
+         now_accepted_name, 
+         string_distance, 
+         match_notes)
+
+rm(finalSynonymy.1, 
+   finalSynonymy.2,
+   fuzzy.1.eval,
+   fuzzy.2.eval,
+   nowOccNames.unmatched,
+   nowOccNames.unmatched.b)
+gc()
+
+finalSynonymy %>%
+  group_by(match_notes) %>%
+  summarise(count = dplyr::n())
+
+nowOccNames.unmatched <- anti_join(nowOccNames, finalSynonymy)
+pbdbOccNames.unmatched <- anti_join(pbdbOccNames, finalSynonymy)
+```
+
+## Part 3 - Synonymy 2
+
+```{r}
+exact.3a <- harmonize_exact_match(base1_dtf = pbdbOccNames.unmatched,
+                                 base2_dtf = mddTaxNames,
+                                 base1_suffix = "pbdb",
+                                 base2_suffix = "mdd",
+                                 base1_col = "pbdb_accepted_name",
+                                 base2_col = "MDD_original_combination")
+
+exact.3a$exact_summary
+
+finalSynonymy.3 <- exact.3a$exact_found
+
+fuzzy.3aa.min1max1 <- harmonize_fuzzy_match(base1_dtf = exact.3a$pbdb_exact_failed,
+                                          base2_dtf = exact.3a$mdd_exact_failed,
+                                          base1_suffix = "pbdb",
+                                          base2_suffix = "mdd",
+                                          base1_col = "pbdb_accepted_name",
+                                          base2_col = "MDD_original_combination",
+                                          min_dist = 1,
+                                          max_dist = 1,
+                                          delim = "_")
+
+fuzzy.3aa.min1max1.eval <- fuzzy.3aa.min1max1$min1max1_match_found %>%
+  mutate(accepted_match = TRUE)
+
+finalSynonymy.3 <- add_to_synonymy(finalSynonymy.3, fuzzy.3aa.min1max1.eval)
+
+rm(exact.3a)
+
+fuzzy.3aa.min2max2 <- harmonize_fuzzy_match(base1_dtf = fuzzy.3aa.min1max1$pbdb_min1max1_match_failed,
+                                          base2_dtf = fuzzy.3aa.min1max1$mdd_min1max1_match_failed,
+                                          base1_suffix = "pbdb",
+                                          base2_suffix = "mdd",
+                                          base1_col = "pbdb_accepted_name",
+                                          base2_col = "MDD_original_combination",
+                                          min_dist = 2,
+                                          max_dist = 2,
+                                          delim = "_")
+
+fuzzy.3aa.min2max2.eval <- fuzzy.3aa.min2max2$min2max2_match_found %>%
+  mutate(accepted_match = c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE))
+
+finalSynonymy.3 <- add_to_synonymy(finalSynonymy.3, fuzzy.3aa.min2max2.eval)
+
+fuzzy.3aa.min3max3 <- harmonize_fuzzy_match(base1_dtf = fuzzy.3aa.min2max2$pbdb_min2max2_match_failed,
+                                          base2_dtf = fuzzy.3aa.min2max2$mdd_min2max2_match_failed,
+                                          base1_suffix = "pbdb",
+                                          base2_suffix = "mdd",
+                                          base1_col = "pbdb_accepted_name",
+                                          base2_col = "MDD_original_combination",
+                                          min_dist = 3,
+                                          max_dist = 3,
+                                          delim = "_")
+
+fuzzy.3aa.min3max3.eval <- fuzzy.3aa.min3max3$min3max3_match_found %>%
+  mutate(accepted_match = FALSE)
+
+finalSynonymy.3 <- add_to_synonymy(finalSynonymy.3, fuzzy.3aa.min3max3.eval)
+
+fuzzy.3aa.min4max4 <- harmonize_fuzzy_match(base1_dtf = fuzzy.3aa.min3max3$pbdb_min3max3_match_failed,
+                                          base2_dtf = fuzzy.3aa.min3max3$mdd_min3max3_match_failed,
+                                          base1_suffix = "pbdb",
+                                          base2_suffix = "mdd",
+                                          base1_col = "pbdb_accepted_name",
+                                          base2_col = "MDD_original_combination",
+                                          min_dist = 4,
+                                          max_dist = 4,
+                                          delim = "_")
+
+fuzzy.3aa.min4max4.eval <- fuzzy.3aa.min4max4$min4max4_match_found %>%
+  mutate(accepted_match = case_when(
+    pbdb_accepted_name == "Ailuropoda_fovealis" & MDD_original_combination == "Aeluropus_fovealis" ~ TRUE, 
+    pbdb_accepted_name == "Pagophilus_groenlandica" & MDD_original_combination == "Pagophilus_grœnlandicus" ~ TRUE, 
+    TRUE ~ FALSE))
+
+finalSynonymy.3 <- add_to_synonymy(finalSynonymy.3, fuzzy.3aa.min4max4.eval)
+
+fuzzy.3aa.eval <- bind_rows(fuzzy.3aa.min1max1.eval,
+                          fuzzy.3aa.min2max2.eval,
+                          fuzzy.3aa.min3max3.eval,
+                          fuzzy.3aa.min4max4.eval)
+
+rm(fuzzy.3aa.min1max1.eval,
+                          fuzzy.3aa.min2max2.eval,
+                          fuzzy.3aa.min3max3.eval,
+                          fuzzy.3aa.min4max4.eval,
+   fuzzy.1b.min1max4,
+  fuzzy.3aa.min1max1,
+  fuzzy.3aa.min2max2,
+  fuzzy.3aa.min3max3,
+  fuzzy.3aa.min4max4)
+gc()
+
+fuzzy.3ab.min1max4 <- harmonize_fuzzy_match(base1_dtf = pbdbOccNames.unmatched,
+                                          base2_dtf = mddTaxNames,
+                                          base1_suffix = "pbdb",
+                                          base2_suffix = "mdd",
+                                          base1_col = "pbdb_accepted_name",
+                                          base2_col = "MDD_original_combination",
+                                          min_dist = 1,
+                                          max_dist = 4,
+                                          delim = "_")
+
+fuzzy.3ab.min1max4.eval <- left_join(fuzzy.3ab.min1max4$min1max4_match_found,
+                                   fuzzy.3aa.eval)
+
+fuzzy.3ab.min1max4.eval <- fuzzy.1b.min1max4.eval %>%
+  mutate(accepted_match = case_when(
+    match_notes == "different spelling on genus" & string_distance == 1 ~ TRUE,
+    match_notes == "different spelling on genus" & string_distance == 2 ~ TRUE,
+    TRUE ~ FALSE
+  ))
+
+finalSynonymy.3 <- add_to_synonymy(finalSynonymy.3, fuzzy.3ab.min1max4.eval)
+
+```
+
+
+```{r}
+exact.3b <- harmonize_exact_match(base1_dtf = nowOccNames.unmatched,
+                                 base2_dtf = mddTaxNames,
+                                 base1_suffix = "now",
+                                 base2_suffix = "mdd",
+                                 base1_col = "now_accepted_name",
+                                 base2_col = "MDD_original_combination")
+
+exact.3b$exact_summary
+
+finalSynonymy.3b <- exact.3b$exact_found
+
+fuzzy.3ab.min1max1 <- harmonize_fuzzy_match(base1_dtf = exact.3a$now_exact_failed,
+                                          base2_dtf = exact.3a$mdd_exact_failed,
+                                          base1_suffix = "now",
+                                          base2_suffix = "mdd",
+                                          base1_col = "now_accepted_name",
+                                          base2_col = "MDD_original_combination",
+                                          min_dist = 1,
+                                          max_dist = 1,
+                                          delim = "_")
+
+fuzzy.3ab.min1max1.eval <- fuzzy.3ab.min1max1$min1max1_match_found %>%
+  mutate(accepted_match = TRUE)
+
+finalSynonymy.3b <- add_to_synonymy(finalSynonymy.3b, fuzzy.3ab.min1max1.eval)
+
+rm(exact.3b)
+
+fuzzy.3ab.min2max2 <- harmonize_fuzzy_match(base1_dtf = fuzzy.3ab.min1max1$now_min1max1_match_failed,
+                                          base2_dtf = fuzzy.3ab.min1max1$mdd_min1max1_match_failed,
+                                          base1_suffix = "now",
+                                          base2_suffix = "mdd",
+                                          base1_col = "now_accepted_name",
+                                          base2_col = "MDD_original_combination",
+                                          min_dist = 2,
+                                          max_dist = 2,
+                                          delim = "_")
+
+fuzzy.3ab.min2max2.eval <- fuzzy.3aa.min2max2$min2max2_match_found %>%
+  mutate(accepted_match = FALSE)
+
+finalSynonymy.3b <- add_to_synonymy(finalSynonymy.3, fuzzy.3ab.min2max2.eval)
+
+fuzzy.3ab.min3max3 <- harmonize_fuzzy_match(base1_dtf = fuzzy.3ab.min2max2$now_min2max2_match_failed,
+                                          base2_dtf = fuzzy.3ab.min2max2$mdd_min2max2_match_failed,
+                                          base1_suffix = "now",
+                                          base2_suffix = "mdd",
+                                          base1_col = "now_accepted_name",
+                                          base2_col = "MDD_original_combination",
+                                          min_dist = 3,
+                                          max_dist = 3,
+                                          delim = "_")
+
+fuzzy.3ab.min3max3.eval <- fuzzy.3ab.min3max3$min3max3_match_found %>%
+  mutate(accepted_match = FALSE)
+
+finalSynonymy.3b <- add_to_synonymy(finalSynonymy.3b, fuzzy.3ab.min3max3.eval)
+
+fuzzy.3ab.min4max4 <- harmonize_fuzzy_match(base1_dtf = fuzzy.3ab.min3max3$now_min3max3_match_failed,
+                                          base2_dtf = fuzzy.3ab.min3max3$mdd_min3max3_match_failed,
+                                          base1_suffix = "now",
+                                          base2_suffix = "mdd",
+                                          base1_col = "now_accepted_name",
+                                          base2_col = "MDD_original_combination",
+                                          min_dist = 4,
+                                          max_dist = 4,
+                                          delim = "_")
+
+fuzzy.3aa.min4max4.eval <- fuzzy.3aa.min4max4$min4max4_match_found %>%
+  mutate(accepted_match = case_when(
+    now_accepted_name == "Ailuropoda_fovealis" & MDD_original_combination == "Aeluropus_fovealis" ~ TRUE, 
+    now_accepted_name == "Pagophilus_groenlandica" & MDD_original_combination == "Pagophilus_grœnlandicus" ~ TRUE, 
+    TRUE ~ FALSE))
+
+finalSynonymy.3 <- add_to_synonymy(finalSynonymy.3, fuzzy.3aa.min4max4.eval)
+
+fuzzy.3aa.eval <- bind_rows(fuzzy.3aa.min1max1.eval,
+                          fuzzy.3aa.min2max2.eval,
+                          fuzzy.3aa.min3max3.eval,
+                          fuzzy.3aa.min4max4.eval)
+
+rm(fuzzy.3aa.min1max1.eval,
+                          fuzzy.3aa.min2max2.eval,
+                          fuzzy.3aa.min3max3.eval,
+                          fuzzy.3aa.min4max4.eval,
+   fuzzy.1b.min1max4,
+  fuzzy.3aa.min1max1,
+  fuzzy.3aa.min2max2,
+  fuzzy.3aa.min3max3,
+  fuzzy.3aa.min4max4)
+gc()
+
+fuzzy.3ab.min1max4 <- harmonize_fuzzy_match(base1_dtf = nowOccNames.unmatched,
+                                          base2_dtf = mddTaxNames,
+                                          base1_suffix = "now",
+                                          base2_suffix = "mdd",
+                                          base1_col = "now_accepted_name",
+                                          base2_col = "MDD_original_combination",
+                                          min_dist = 1,
+                                          max_dist = 4,
+                                          delim = "_")
+
+fuzzy.3ab.min1max4.eval <- left_join(fuzzy.3ab.min1max4$min1max4_match_found,
+                                   fuzzy.3aa.eval)
+
+fuzzy.3ab.min1max4.eval <- fuzzy.1b.min1max4.eval %>%
+  mutate(accepted_match = case_when(
+    match_notes == "different spelling on genus" & string_distance == 1 ~ TRUE,
+    match_notes == "different spelling on genus" & string_distance == 2 ~ TRUE,
+    TRUE ~ FALSE
+  ))
+
+finalSynonymy.3 <- add_to_synonymy(finalSynonymy.3, fuzzy.3ab.min1max4.eval)
+
+```
+
+```{r}
+
+now_occ <- now_occ %>%
+  mutate(pbdb_accepted_name = str_replace_all(accepted_name, pattern = " ", replacement = "_"))
+
+pbdb_occ_matched <- pbdb_occ %>%
+  filter(pbdb_accepted_name %in% finalSynonymy$pbdb_accepted_name)
+
+
+plot(pbdb_occ$lng, pbdb_occ$lat, ylim = c(-70, 80))
+points(now_occ$LONG, now_occ$LAT, col = "red")
+
 
 ```
 
