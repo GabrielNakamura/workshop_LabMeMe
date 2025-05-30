@@ -13,7 +13,7 @@ mdd.synonymy.path <- here("data",
                           "mdd_taxa_v2.1_raw.csv")
 
 mdd.functions.path <- here("scripts",
-                           "R",
+                           "functions",
                            "cleaning_mdd.R")
 
 #Optional
@@ -37,7 +37,7 @@ rm(mdd.synonymy.path,
    mdd.functions.path)
 gc()
 
-#### Function arguments ####
+#### Preparing function arguments ####
 
 select.group_col <- "MDD_order"
 select.group_name <- "Carnivora" #Uncomment bellow to check available groups
