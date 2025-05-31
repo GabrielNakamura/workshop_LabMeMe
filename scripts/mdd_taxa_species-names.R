@@ -1,4 +1,16 @@
-#### Loading packages ####
+# _Info -------------------------------------------------------------------
+##
+## Title:
+## Purpose:
+##
+## Author: Thaís G. P. Faria
+## Github: https://github.com/Thais-Faria
+## Date created: 2025-05-31
+## Copyright (c) Thaís G. P. Faria, 2025
+## License: GNU General Public License version 3
+##
+# _Set up -----------------------------------------------------------------
+# __Packages --------------------------------------------------------------
 
 library(here) #Operating system agnostic file paths with .Rproj
 library(stringr) #String manipulation
@@ -6,7 +18,7 @@ library(dplyr) #Data wrangling with tidyverse syntax
 library(tidytable) #Brings the data.table package's fast operations to dplyr syntax
 library(tidylog) #Optional, prints detailed information about changes in the dataframe during data wrangling with tidyverse functions
 
-#### Setting file paths ####
+# __File paths ------------------------------------------------------------
 
 mdd.synonymy.path <- here("data",
                           "raw",
@@ -21,23 +33,33 @@ mdd.main.path <- here("data",
                       "raw",
                       "mdd_species_v2.1_raw.csv")
 
-#### Loading data and functions####
+# __Loading functions -----------------------------------------------------
+
+source(mdd.functions.path)
+
+# __Loading data ----------------------------------------------------------
 
 mdd.synonymy.data <- read.csv(mdd.synonymy.path,
                               na.strings = "")
 
-source(mdd.functions.path)
-
 #Optional
 mdd.main.data <- read.csv(mdd.main.path,
-                              na.strings = c("NA", ""))
+                          na.strings = c("NA", ""))
+
+# __Cleanup ---------------------------------------------------------------
 
 rm(mdd.synonymy.path,
    mdd.main.path,
    mdd.functions.path)
 gc()
 
-#### Preparing function arguments ####
+# _Main -------------------------------------------------------------------
+# __Setting up function arguments -----------------------------------------
+
+# Notes: The following variables will be used on the filtering, cleaning
+#        and wrangling process further down. They are listed here so you
+#        can easily set up or change them, avoiding the need to individually
+#        change them for every function.
 
 select.group_col <- "MDD_order"
 select.group_name <- "Carnivora" #Uncomment bellow to check available groups
@@ -46,14 +68,18 @@ select.group_name <- "Carnivora" #Uncomment bellow to check available groups
 #available_genera <- distinct(select(mdd.synonymy.data, MDD_order, MDD_family, MDD_genus))
 
 select.original_rank_col <- "MDD_original_rank"
-select.original_rank_name <- c("species", "synonym_species") #Uncomment bellow to check available original ranks
-#available_ranks <- unique(mdd.synonymy.data$MDD_original_rank)
+select.original_rank_name <- c("species",
+                               "subspecies",
+                               "synonym_species"
+                               ) #Uncomment bellow to check available original ranks
+available_ranks <- unique(mdd.synonymy.data$MDD_original_rank)
 
 select.species_col <- "MDD_species"
 select.original_combination_col <- "MDD_original_combination"
 
 select.cols_to_keep <- c("MDD_species_id",
                          "MDD_syn_ID",
+                         "MDD_root_name",
                          "MDD_order",
                          "MDD_family",
                          "MDD_genus",
@@ -66,7 +92,7 @@ select.cols_to_keep <- c("MDD_species_id",
 #colnames(mdd.synonymy.data)
 select.new_name_separator <- "_"
 
-#### Filtering data ####
+# __Filtering data --------------------------------------------------------
 
 mdd.synonymy.data <- mdd.filter_synonyms(data = mdd.synonymy.data,
                                          species_col = select.species_col,
@@ -77,7 +103,8 @@ mdd.synonymy.data <- mdd.filter_synonyms(data = mdd.synonymy.data,
                                          cols_to_keep = select.cols_to_keep)
 gc()
 
-#### Original rank == c("species", "synonym_species") ####
+# __Cleaning and wrangling data -------------------------------------------
+# ___Original rank as "species", "subspecies" or "synonym_species" --------
 
 mdd.synonyms <- mdd.format_synonyms(data = mdd.synonymy.data,
                                     species_col = select.species_col,
