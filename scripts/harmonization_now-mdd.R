@@ -1,5 +1,17 @@
+# _Info -------------------------------------------------------------------
+##
+## Title: harmonization_now-mdd.R
+## Purpose:
+##
+## Author: Thaís G. P. Faria
+## Github: https://github.com/Thais-Faria
+## Date created: 2025-05-31
+## Copyright (c) Thaís G. P. Faria, 2025
+## License: GNU General Public License version 3
+##
 # _Set up -----------------------------------------------------------------
 # __Packages --------------------------------------------------------------
+
 library(here)
 library(stringr)
 library(dplyr)
@@ -7,25 +19,40 @@ library(tidytable)
 library(fuzzyjoin)
 library(tidylog)
 
+# __File paths ------------------------------------------------------------
+
+mdd.path <- here("data",
+                   "processed",
+                   "mdd_taxa_species-names_v2.1.csv")
+
+now.path <- here("data",
+                   "processed",
+                   "now_occs_species-names_2025-05-06.csv")
+
+functions.path <- here("scripts",
+                       "harmonization_source-functions.R")
 
 # __Loading functions -----------------------------------------------------
 
-source(here("scripts",
-            "harmonization_source-functions.R"))
+source(functions.path)
 
 # __Loading data ----------------------------------------------------------
-nowOccNames <- read.csv(here("data",
-                             "processed",
-                             "now_occs_species-names_2025-05-06.csv"))
 
-mddTaxNames <- read.csv(here("data",
-                             "processed",
-                             "mdd_taxa_species-names_v2.1.csv"))
+mddTaxNames <- read.csv(mdd.path)
 
+nowOccNames <- read.csv(now.path)
 
-# __Sub-setting data -------------------------------------------------------
+# __Sub-setting data ------------------------------------------------------
 
 # MDD
+mddTaxNames_epithet <- mddTaxNames %>%
+  filter(MDD_actual_rank == "epithet") %>%
+  distinct()
+
+mddTaxNames_subspecies <- mddTaxNames %>%
+  filter(MDD_actual_rank == "subspecies") %>%
+  distinct()
+
 mddTaxNames_species <- mddTaxNames %>%
   filter(MDD_actual_rank == "species") %>%
   distinct()
@@ -58,10 +85,11 @@ nowOccNames_other <- nowOccNames %>%
 
 # __Cleanup ---------------------------------------------------------------
 
-rm(mddTaxNames,
+rm(mdd.path,
+   now.path,
+   functions.path,
    nowOccNames)
-gc()
-
+   gc()
 
 # _Harmonization ----------------------------------------------------------
 # __MDD accepted species X NOW accepted species ---------------------------
@@ -341,8 +369,6 @@ rm(fuzzy_syn_0to2max,
 gc()
 
 
-
-
 # ___Max age up to 5 ma ---------------------------------------------------
 # ____Exact ---------------------------------------------------------------
 
@@ -444,6 +470,50 @@ gc()
 
 
 # ___Other ages -----------------------------------------------------------
+# ____Exact ---------------------------------------------------------------
+
+exact_syn_other <- harmonize_exact_match(base1_dtf = mddTaxNames_species,
+                                         base2_dtf = nowOccNames_unmatched_other)
+exact_syn_other$exact_summary
+
+exact_syn_other_eval <- exact_syn_other$exact_found %>%
+  mutate(accepted_match = case_when(
+    MDD_syn_ID == "100034868" & SIDNUM == "24488" ~ FALSE,
+    TRUE ~ TRUE
+  )) %>%
+  mutate(match_notes = paste0(match_notes, " (mdd synonym, now accepted)"))
+
+evaluated_pairs <- distinct(bind_rows(evaluated_pairs, exact_syn_other_eval))
+finalSynonymy <- add_to_synonymy(finalSynonymy,
+                                 exact_syn_other_eval)
+
+nowOccNames_unmatched_other <- nowOccNames_unmatched_other %>%
+  anti_join(filter(evaluated_pairs, accepted_match == TRUE))
+
+rm(exact_syn_other,
+   exact_syn_other_eval)
+gc()
+
+# ____Fuzzy ---------------------------------------------------------------
+
+fuzzy_syn_other <- harmonize_fuzzy_match(base1_dtf = mddTaxNames_species,
+                                         base2_dtf = nowOccNames_unmatched_other,
+                                         min_dist = 1, max_dist = 4)
+
+fuzzy_syn_other_eval <- fuzzy_syn_other$min1max4_match_found %>%
+  mutate(accepted_match = FALSE) %>%
+  mutate(match_notes = paste0(match_notes, " (mdd synonym, now accepted)"))
+
+evaluated_pairs <- distinct(bind_rows(evaluated_pairs, fuzzy_syn_other_eval))
+finalSynonymy <- add_to_synonymy(finalSynonymy,
+                                 fuzzy_syn_other_eval)
+
+nowOccNames_unmatched_other <- nowOccNames_unmatched_other %>%
+  anti_join(filter(evaluated_pairs, accepted_match == TRUE))
+
+rm(fuzzy_syn_other,
+   fuzzy_syn_other_eval)
+gc()
 
 
 
