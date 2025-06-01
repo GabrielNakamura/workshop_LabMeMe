@@ -1,3 +1,48 @@
+#### Filtering ####
+
+filter_synonyms <- function(
+    data = my_data,
+    group_col = select_group_col,
+    group_name = select_group_name,
+    rank_col = select_original_rank_col,
+    rank_name = select_original_rank,
+    columns_to_keep = select_cols_to_keep
+){
+  colnames <- colnames(data)
+
+  if (!species_col %in% colnames) {stop("\n `species_col` not found. Please provide a valid column name.\n Tip: The standard MDD synonyms table since v2.0 has MDD_species.")}
+  if (!group_col %in% colnames & group_col != "none") {stop("\n `group_col` not found. Please provide one valid column name or 'none'.\n Tip: The standard MDD synonyms table since v2.0 usually has MDD_order, MDD_family and MDD_genus.")}
+  if (!original_rank_col %in% colnames) {stop("\n `rank_col` not found. Please provide one valid column name or 'none'.\n Tip: The standard MDD synonyms table since v2.0 usually has MDD_original_rank.")}
+  if (all(is.na(rank_name)) | is.null(rank_name)) {stop("\n Please provide at least one valid original rank. \n Tip: Check spelling, or the available options on your data with some code like the following `unique(mdd_data$MDD_original_rank)`.")}
+
+  dtf <- filter(data, str_detect(string = eval(parse(text = species_col)), pattern = "incertae_sedis", negate = TRUE))
+
+  if (group_col != "none"){
+    dtf <- filter(dtf, eval(parse(text = group_col)) %in% group_name)
+  }
+
+  if(nrow(dtf) == 0){
+    warning("\n `group_name` not found. Returning an empty dataframe. \n Tip: Check if the column provided to `group_col` is the correct one for your desired group.")
+    return(dtf)
+  }
+
+  dtf <- filter(dtf, eval(parse(text = original_rank_col)) %in% rank_name)
+
+  if(nrow(dtf) == 0){
+    warning("\n None of the strings provided for `rank_name` were found. Returning an empty dataframe.")
+    return(dtf)
+  }
+
+  dtf <- dtf %>%
+    select(all_of(columns_to_keep)) %>%
+    distinct()
+
+  return(dtf)
+
+}
+
+#### Wrangling ####
+
 separate_name_parts <- function(data,
                                 name_col,
                                 base_suffix,
@@ -85,28 +130,31 @@ swap_subgenus <- function(data,
   return(dtf)
 }
 
-create_alternative_with_subgenus <- function(data,
-                                             name_col,
-                                             delim = select_name_separator){
+del_and_swap_subgenus <- function(data,
+                                  name_col,
+                                  delim = select_name_separator){
 
   dtf <- data %>%
     delete_subgenus(name_col,
-                  delim) %>%
+                    delim) %>%
     swap_subgenus(name_col,
                   delim) %>%
     distinct() %>%
-    pivot_longer(cols = contains("Subgen"), values_to = "del_or_swap_subgen") %>%
+    pivot_longer(cols = contains("Subgen"),
+                 values_to = "del_or_swap_subgen") %>%
     select(-name) %>%
     distinct()
 }
 
+#### Harmonization ####
 
 harmonize_exact_match <- function(base1_dtf,
                                   base2_dtf,
                                   base1_suffix = b1_suffix,
                                   base2_suffix = b2_suffix,
                                   base1_col = b1_col,
-                                  base2_col = b2_col) {
+                                  base2_col = b2_col,
+                                  col_order = select_column_order) {
 
   by_cols <- base2_col
   names(by_cols) <- base1_col
@@ -169,6 +217,8 @@ harmonize_exact_match <- function(base1_dtf,
   exact_found <- inner_join(exact_found,
                             base1_dtf) %>%
     inner_join(base2_dtf) %>%
+    select(all_of(select_column_order),
+           everything()) %>%
     distinct()
 
   base1_failed_match <- inner_join(base1_failed_match,
@@ -200,7 +250,8 @@ harmonize_fuzzy_match <- function(base1_dtf,
                                   base2_col = b2_col,
                                   min_dist,
                                   max_dist,
-                                  delim = select_name_separator) {
+                                  delim = select_name_separator,
+                                  col_order = select_column_order) {
 
   by_cols <- base2_col
   names(by_cols) <- base1_col
@@ -268,6 +319,8 @@ harmonize_fuzzy_match <- function(base1_dtf,
     inner_join(base1_dtf) %>%
     distinct() %>%
     inner_join(base2_dtf) %>%
+    select(all_of(select_column_order),
+           everything()) %>%
     distinct()
 
   base1_dist_failed_match <- base1_dist_failed_match %>%
@@ -301,4 +354,20 @@ add_to_synonymy <- function(synonymy_dtf,
   dtf <- distinct(bind_rows(synonymy_dtf, select(filter(eval_dtf, accepted_match == TRUE), -accepted_match)))
 
   return(dtf)
+}
+
+remove_already_evaluated <- function(data,
+                                     evaluated_dtf = evaluated_pairs,
+                                     base1_id_col = select.base1_id_col,
+                                     base2_id_col = select.base2_id_col){
+
+  eval_key_pairs <- evaluated_dtf %>%
+    select(all_of(c(base1_id_col, base2_id_col))) %>%
+    distinct()
+
+  dtf <- anti_join(data, eval_key_pairs) %>%
+    distinct()
+
+  return(dtf)
+
 }
