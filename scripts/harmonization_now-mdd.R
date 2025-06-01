@@ -45,29 +45,37 @@ nowOccNames <- read.csv(now.path)
 # __Sub-setting data ------------------------------------------------------
 
 # MDD
-mddTaxNames_epithet <- mddTaxNames %>%
-  filter(MDD_actual_rank == "epithet") %>%
-  distinct()
 
-mddTaxNames_subspecies <- mddTaxNames %>%
-  filter(MDD_actual_rank == "subspecies") %>%
-  distinct()
-
-mddTaxNames_species <- mddTaxNames %>%
-  filter(MDD_actual_rank == "species") %>%
-  distinct()
-
-mddTaxNames_acceptedSpecies <- mddTaxNames_species %>%
-  filter(MDD_validity == "species") %>%
+mddTaxNames <- mddTaxNames %>%
   select(MDD_species_id,
          MDD_syn_ID,
+         MDD_root_name,
          MDD_family,
          MDD_species,
          MDD_original_combination,
          MDD_author,
          MDD_year,
          MDD_authority_parentheses,
-         MDD_continent) %>%
+         MDD_continent,
+         MDD_validity,
+         MDD_actual_rank) %>%
+  distinct()
+
+mddTaxNames_all <- mddTaxNames %>%
+  select(-MDD_validity,
+         -MDD_actual_rank) %>%
+  distinct()
+
+mddTaxNames_species <- mddTaxNames %>%
+  filter(MDD_actual_rank == "species") %>%
+  select(-MDD_validity,
+         -MDD_actual_rank) %>%
+  distinct()
+
+mddTaxNames_acceptedSpecies <- mddTaxNames %>%
+  filter(MDD_actual_rank == "species" & MDD_validity == "species") %>%
+  select(-MDD_validity,
+         -MDD_actual_rank) %>%
   distinct()
 
 # NOW
@@ -88,14 +96,15 @@ nowOccNames_other <- nowOccNames %>%
 rm(mdd.path,
    now.path,
    functions.path,
-   nowOccNames)
-   gc()
+   nowOccNames,
+   mddTaxNames)
+gc()
 
 # _Harmonization ----------------------------------------------------------
 # __MDD accepted species X NOW accepted species ---------------------------
 # ___Set up default function arguments ------------------------------------
 
-b1_suffix <- "mdd"
+b1_suffix <- "mdd" #Renomear essas variáveis pra "select.***"
 b1_col <- "MDD_species"
 b2_suffix <- "now"
 b2_col <- "now_accepted_name"
@@ -104,6 +113,7 @@ select_column_order <- c(
   "MDD_syn_ID",
   "SIDNUM",
   "MDD_species",
+  "MDD_root_name",
   "MDD_original_combination",
   "now_accepted_name",
   "string_distance",
@@ -115,6 +125,8 @@ select_column_order <- c(
   "MIN_AGE",
   "MAX_AGE"
 )
+select.base1_id_col <- "MDD_syn_ID"
+select.base2_id_col <- "SIDNUM"
 
 # ___Max age up to 2 ma ---------------------------------------------------
 # ____Exact ---------------------------------------------------------------
@@ -325,7 +337,7 @@ exact_syn_0to2max$exact_summary
 exact_syn_0to2max_eval <- exact_syn_0to2max$exact_found %>%
   mutate(accepted_match = case_when(
     MDD_syn_ID == "100033238" & SIDNUM == "33077" ~ FALSE, #MDD synonym refers to domestic dog, and NOW occurrence is between 10k and 2ma. It's unclear whether this is a match.
-    MDD_syn_ID == "100003738" & SIDNUM == "85148" ~ FALSE, #NOW comments on this occurrence calls it "Canis anthus primaevus" and MDD synonym refers to Cuon alpinus
+    MDD_syn_ID == "100003738" & SIDNUM == "85148" ~ FALSE, #NOW comments on this occurrence call it "Canis anthus primaevus" and MDD synonym refers to Cuon alpinus
     TRUE ~ TRUE
   )) %>%
   mutate(match_notes = paste0(match_notes, " (mdd synonym, now accepted)"))
@@ -348,7 +360,7 @@ fuzzy_syn_0to2max <- harmonize_fuzzy_match(base1_dtf = mddTaxNames_species,
                                            min_dist = 1, max_dist = 4)
 
 fuzzy_syn_0to2max_eval <- fuzzy_syn_0to2max$min1max4_match_found %>%
-  mutate(accepted_match = case_when(
+  mutate(accepted_match = case_when( #Dar uma olhada no caso do canis javanicus e Ailuropoda_baconi
     MDD_syn_ID == "100003743" & SIDNUM == "30020" ~ TRUE,
     MDD_syn_ID == "100034881" & SIDNUM == "85096" ~ TRUE,
     MDD_syn_ID == "100003743" & SIDNUM == "29615" ~ TRUE,
@@ -423,7 +435,7 @@ gc()
 
 
 
-# ___Min age up 1ma -------------------------------------------------------
+# ___Min age up 1 ma ------------------------------------------------------
 # ____Exact ---------------------------------------------------------------
 
 exact_syn_0to1min <- harmonize_exact_match(base1_dtf = mddTaxNames_species,
@@ -512,11 +524,209 @@ nowOccNames_unmatched_other <- nowOccNames_unmatched_other %>%
   anti_join(filter(evaluated_pairs, accepted_match == TRUE))
 
 rm(fuzzy_syn_other,
-   fuzzy_syn_other_eval)
+   fuzzy_syn_other_eval,
+   mddTaxNames_species)
 gc()
 
+# __MDD root name X NOW accepted name -------------------------------------
+# ___Set up default function arguments ------------------------------------
 
+b1_suffix <- "mdd"
+b1_col <- "MDD_root_name"
+b2_suffix <- "now"
+b2_col <- "SPECIES"
 
+# ___Max age up to 2 ma ---------------------------------------------------
+# ____Exact ---------------------------------------------------------------
+
+exact_root_0to2max <- harmonize_exact_match(base1_dtf = mddTaxNames_all,
+                                            base2_dtf = nowOccNames_unmatched_0to2max)
+exact_root_0to2max$exact_summary
+
+exact_root_0to2max_eval <- exact_root_0to2max$exact_found %>%
+  remove_already_evaluated() %>%
+  mutate(accepted_match = case_when(
+    MDD_family != FAMILY ~ FALSE
+  ), accepted_match = case_when(
+    MDD_syn_ID == "100031314" & SIDNUM == "8591" ~ TRUE,
+    MDD_syn_ID == "100004829" & SIDNUM == "35317" ~ TRUE,
+    MDD_syn_ID == "100030606" & SIDNUM == "85877" ~ FALSE, #It's not very clear whether Ursus kokeni Matthew & Granger, 1923 (= Ursus thibetanus) is the same as Euarctos kokeni
+    TRUE ~ FALSE
+  )) %>%
+  mutate(match_notes = paste0(match_notes, " (mdd root, now accepted)"))
+
+evaluated_pairs <- distinct(bind_rows(evaluated_pairs, exact_root_0to2max_eval))
+finalSynonymy <- add_to_synonymy(finalSynonymy,
+                                 exact_root_0to2max_eval)
+
+nowOccNames_unmatched_0to2max <- nowOccNames_unmatched_0to2max %>%
+  anti_join(filter(evaluated_pairs, accepted_match == TRUE))
+
+rm(exact_root_0to2max,
+   exact_root_0to2max_eval)
+gc()
+
+# ____Fuzzy ---------------------------------------------------------------
+
+fuzzy_root_0to2max <- harmonize_fuzzy_match(base1_dtf = mddTaxNames_all,
+                                            base2_dtf = nowOccNames_unmatched_0to2max,
+                                            min_dist = 1, max_dist = 2)
+
+fuzzy_root_0to2max_eval <- fuzzy_root_0to2max$min1max2_match_found %>%
+  remove_already_evaluated() %>%
+  mutate(accepted_match = FALSE) %>%
+  mutate(match_notes = paste0(match_notes, " (mdd root, now accepted)"))
+
+evaluated_pairs <- distinct(bind_rows(evaluated_pairs, fuzzy_root_0to2max_eval))
+finalSynonymy <- add_to_synonymy(finalSynonymy,
+                                 fuzzy_root_0to2max_eval)
+
+nowOccNames_unmatched_0to2max <- nowOccNames_unmatched_0to2max %>%
+  anti_join(filter(evaluated_pairs, accepted_match == TRUE))
+
+rm(fuzzy_root_0to2max,
+   fuzzy_root_0to2max_eval)
+gc()
+
+# ___Max age up to 5 ma ---------------------------------------------------
+# ____Exact ---------------------------------------------------------------
+
+exact_root_2to5max <- harmonize_exact_match(base1_dtf = mddTaxNames_all,
+                                            base2_dtf = nowOccNames_unmatched_2to5max)
+exact_root_2to5max$exact_summary
+
+exact_root_2to5max_eval <- exact_root_2to5max$exact_found %>%
+  remove_already_evaluated() %>%
+  mutate(accepted_match = case_when(
+    MDD_family != FAMILY ~ FALSE
+  ), accepted_match = case_when(
+    MDD_syn_ID == "100031789" & SIDNUM == "30068" ~ TRUE,
+    TRUE ~ FALSE
+  )) %>%
+  mutate(match_notes = paste0(match_notes, " (mdd root, now accepted)"))
+
+evaluated_pairs <- distinct(bind_rows(evaluated_pairs, exact_root_2to5max_eval))
+finalSynonymy <- add_to_synonymy(finalSynonymy,
+                                 exact_root_2to5max_eval)
+
+nowOccNames_unmatched_2to5max <- nowOccNames_unmatched_2to5max %>%
+  anti_join(filter(evaluated_pairs, accepted_match == TRUE))
+
+rm(exact_root_2to5max,
+   exact_root_2to5max_eval)
+gc()
+
+# ____Fuzzy ---------------------------------------------------------------
+
+fuzzy_root_2to5max <- harmonize_fuzzy_match(base1_dtf = mddTaxNames_all,
+                                            base2_dtf = nowOccNames_unmatched_2to5max,
+                                            min_dist = 1, max_dist = 2)
+
+fuzzy_root_2to5max_eval <- fuzzy_root_2to5max$min1max2_match_found %>%
+  remove_already_evaluated() %>%
+  mutate(accepted_match = FALSE) %>%
+  mutate(match_notes = paste0(match_notes, " (mdd root, now accepted)"))
+
+evaluated_pairs <- distinct(bind_rows(evaluated_pairs, fuzzy_root_2to5max_eval))
+finalSynonymy <- add_to_synonymy(finalSynonymy,
+                                 fuzzy_root_2to5max_eval)
+
+nowOccNames_unmatched_2to5max <- nowOccNames_unmatched_2to5max %>%
+  anti_join(filter(evaluated_pairs, accepted_match == TRUE))
+
+rm(fuzzy_root_2to5max,
+   fuzzy_root_2to5max_eval)
+gc()
+
+# ___Min age up 1 ma ------------------------------------------------------
+# ____Exact ---------------------------------------------------------------
+
+exact_root_0to1min <- harmonize_exact_match(base1_dtf = mddTaxNames_all,
+                                            base2_dtf = nowOccNames_unmatched_0to1min)
+exact_root_0to1min$exact_summary
+
+exact_root_0to1min_eval <- exact_root_0to1min$exact_found %>%
+  remove_already_evaluated() %>%
+  mutate(accepted_match = FALSE) %>%
+  mutate(match_notes = paste0(match_notes, " (mdd root, now accepted)"))
+
+evaluated_pairs <- distinct(bind_rows(evaluated_pairs, exact_root_0to1min_eval))
+finalSynonymy <- add_to_synonymy(finalSynonymy,
+                                 exact_root_0to1min_eval)
+
+nowOccNames_unmatched_0to1min <- nowOccNames_unmatched_0to1min %>%
+  anti_join(filter(evaluated_pairs, accepted_match == TRUE))
+
+rm(exact_root_0to1min,
+   exact_root_0to1min_eval)
+gc()
+
+# ____Fuzzy ---------------------------------------------------------------
+
+fuzzy_root_0to1min <- harmonize_fuzzy_match(base1_dtf = mddTaxNames_all,
+                                            base2_dtf = nowOccNames_unmatched_0to1min,
+                                            min_dist = 1, max_dist = 2)
+
+fuzzy_root_0to1min_eval <- fuzzy_root_0to1min$min1max2_match_found %>%
+  remove_already_evaluated() %>%
+  mutate(accepted_match = FALSE) %>%
+  mutate(match_notes = paste0(match_notes, " (mdd root, now accepted)"))
+
+evaluated_pairs <- distinct(bind_rows(evaluated_pairs, fuzzy_root_0to1min_eval))
+finalSynonymy <- add_to_synonymy(finalSynonymy,
+                                 fuzzy_root_0to1min_eval)
+
+nowOccNames_unmatched_0to1min <- nowOccNames_unmatched_0to1min %>%
+  anti_join(filter(evaluated_pairs, accepted_match == TRUE))
+
+rm(fuzzy_root_0to1min,
+   fuzzy_root_0to1min_eval)
+gc()
+
+# ___Other ages -----------------------------------------------------------
+# ____Exact ---------------------------------------------------------------
+
+exact_root_other <- harmonize_exact_match(base1_dtf = mddTaxNames_all,
+                                          base2_dtf = nowOccNames_unmatched_other)
+exact_root_other$exact_summary
+
+exact_root_other_eval <- exact_root_other$exact_found %>%
+  remove_already_evaluated() %>%
+  mutate(accepted_match = FALSE) %>%
+  mutate(match_notes = paste0(match_notes, " (mdd root, now accepted)"))
+
+evaluated_pairs <- distinct(bind_rows(evaluated_pairs, exact_root_other_eval))
+finalSynonymy <- add_to_synonymy(finalSynonymy,
+                                 exact_root_other_eval)
+
+nowOccNames_unmatched_other <- nowOccNames_unmatched_other %>%
+  anti_join(filter(evaluated_pairs, accepted_match == TRUE))
+
+rm(exact_root_other,
+   exact_root_other_eval)
+gc()
+
+# ____Fuzzy ---------------------------------------------------------------
+
+fuzzy_root_other <- harmonize_fuzzy_match(base1_dtf = mddTaxNames_all,
+                                          base2_dtf = nowOccNames_unmatched_other,
+                                          min_dist = 1, max_dist = 2)
+
+fuzzy_root_other_eval <- fuzzy_root_other$min1max2_match_found %>%
+  remove_already_evaluated() %>%
+  mutate(accepted_match = FALSE) %>%
+  mutate(match_notes = paste0(match_notes, " (mdd root, now accepted)"))
+
+evaluated_pairs <- distinct(bind_rows(evaluated_pairs, fuzzy_root_other_eval))
+finalSynonymy <- add_to_synonymy(finalSynonymy,
+                                 fuzzy_root_other_eval)
+
+nowOccNames_unmatched_other <- nowOccNames_unmatched_other %>%
+  anti_join(filter(evaluated_pairs, accepted_match == TRUE))
+
+rm(fuzzy_root_other,
+   fuzzy_root_other_eval)
+gc()
 
 
 
