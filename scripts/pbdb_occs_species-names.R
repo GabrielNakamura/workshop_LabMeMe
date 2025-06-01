@@ -1,77 +1,144 @@
-# Anotação: A coluna accepted_attr deveria conter as autoridades taxonômicas dos
-# nomes aceitos, mas veio vazia por alguma razão. Caso os dados sejam atualizados
-# no futuro, esse script poderá ser expandido para formatar a coluna de autores
-# e anos.
+# _Info -------------------------------------------------------------------
+##
+## Title: pbdb_occs_species-names.R
+## Purpose:
+##
+## Author: Thaís G. P. Faria
+## Github: https://github.com/Thais-Faria
+## Date created: 2025-06-01
+## Copyright (c) Thaís G. P. Faria, 2025
+## License: GNU General Public License version 3
+##
+# _Set up -----------------------------------------------------------------
+# __Packages --------------------------------------------------------------
 
-# Carregando pacotes e dados
-library(here)
-library(groundhog)
-groundhog.day <- "2025-04-01"
-groundhog.packages <- c("here",
-                        "tidyr",
-                        "dplyr",
-                        "stringr",
-                        "tidylog")
+library(here) #Operating system agnostic file paths with .Rproj
+library(stringr) #String manipulation
+library(dplyr) #Data wrangling with tidyverse syntax
+library(tidytable) #Brings the data.table package's fast operations to dplyr syntax
+#library(tidylog) #Optional, prints detailed information about changes in the dataframe during data wrangling with tidyverse functions
 
-groundhog.library(groundhog.packages,
-                  groundhog.day)
-rm(groundhog.day,
-   groundhog.packages)
+# __File paths ------------------------------------------------------------
 
-pbdb_250506_carn_raw_dtf <- read.csv(here("data",
-                                          "raw",
-                                          "pbdb_occs_2025-05-06_raw.csv"),
-                                     skip = 19)
+pbdbOccs.path <- here("data",
+                      "raw",
+                      "pbdb_occs_2025-06-01_raw.csv")
 
-# Preparação dos dados para a harmonização
+functions.1.path <- here("scripts",
+                         "functions",
+                         "checking_general.R")
 
-pbdb_occs_names <- pbdb_250506_carn_raw_dtf %>%
-  select(identified_name, #Selecionando colunas com informação taxonômica
-         difference,
-         accepted_name,
-         identified_rank,
-         accepted_rank,
-         accepted_attr,
-         phylum,
-         class,
-         order,
-         family,
-         genus,
-         subgenus_name,
-         subgenus_reso,
-         primary_reso,
-         species_reso,
-         phylum_no,
-         class_no,
-         order_no,
-         family_no,
-         genus_no,
-         subgenus_no,
-         identified_no,
-         accepted_no) %>%
-  filter(accepted_rank == "species") %>% #Filtrando apenas nomes pertencentes a espécies
-  distinct() %>% #Compactand a tabela para conter apenas linhas distintas, não repetidas
-  mutate(across(where(is.character), #Substituindo células vazias na tabela toda por NA
-                ~na_if(., "")),
-         across(.cols = c(identified_name, accepted_name, genus), #Substituindo os espaços por _ nas colunas de nome identificado, aceito e gênero
-                ~str_replace_all(., pattern = " ", replacement = "_")),
-         family_no = as.integer(na_if(family_no, "NF")), #Substituindo valor "NF" na coluna "family_no" para NA, e transformando a colunas para o tipo "integer", pois ela corresponde ao número de registro das famílias válidas na base
-         split_name = accepted_name, #Copiando coluna de nomes aceitos para substituir o gênero do nome aceito pelo gênero da coluna genus
-         split_name = str_replace_all(split_name, #Retirando o nome do subgênero para não ficar repetido com a coluna genus
-                                      pattern = "\\(.*\\)_",
-                                      replacement = "")) %>%
-  separate_wider_delim(cols = split_name, #Separando cópia do nome aceito para juntar com a coluna genus
-                       names = c("old_genus", "rest"),
-                       delim = "_",
-                       too_few = "align_start",
-                       too_many = "merge") %>%
-  mutate(internal_synonym = paste(genus, rest, sep = "_")) %>% #Criando a coluna de sinônimos internos do pbdb
-  relocate(internal_synonym, .after = accepted_name) %>% #Reorganizando colunas
-  rename_with(~paste0("pbdb_", .x, recycle0 = TRUE)) #Adicionando o sufixo "pbdb_" no nome de todas as colunas
+functions.2.path <- here("scripts",
+                         "functions",
+                         "cleaning_pbdb.R")
 
-# Salvando o arquivo
-write.csv(pbdb_occs_names,
-          row.names = FALSE,
+# __Loading functions -----------------------------------------------------
+
+source(functions.1.path)
+source(functions.2.path)
+
+# __Loading data ----------------------------------------------------------
+
+pbdbOccs.data <- read.csv(pbdbOccs.path,
+                          skip = 19,
+                          na.strings = "")
+
+# __Cleanup ---------------------------------------------------------------
+
+rm(pbdbOccs.path,
+   functions.1.path,
+   functions.2.path)
+gc()
+
+# _Main -------------------------------------------------------------------
+# __Setting up function arguments -----------------------------------------
+
+#colnames(pbdbOccs.data) #Uncomment to check available columns
+select.cols_to_keep <- c("identified_no",
+                         "accepted_no",
+                         "identified_name",
+                         "difference",
+                         "accepted_name",
+                         "identified_rank",
+                         "accepted_rank",
+                         "accepted_attr",
+                         "phylum",
+                         "class",
+                         "order",
+                         "family",
+                         "genus",
+                         "subgenus_name",
+                         "subgenus_reso",
+                         "primary_reso",
+                         "species_reso",
+                         "phylum_no",
+                         "class_no",
+                         "order_no",
+                         "family_no",
+                         "genus_no",
+                         "subgenus_no")
+
+#unique(pbdbOccs.data$accepted_rank) #Uncomment to check available ranks
+select.accepted_rank_name <- c(
+  #"subspecies",
+  "species"
+)
+
+select.accepted_name_column <- "accepted_name"
+select.genus_column <- "genus"
+
+#String replacement guides
+set.separator_to_fix <- list(cols = c("identified_name",
+                                      "accepted_name",
+                                      "genus"),
+                             old_new_pairs = c(" " = "_"))
+
+# __Filtering data --------------------------------------------------------
+
+pbdbOccs.data <- pbdbOccs.data %>%
+  filter(accepted_rank %in% select.accepted_rank_name) %>%
+  select(all_of(select.cols_to_keep)) %>%
+  distinct()
+
+gc()
+
+# __Cleaning and wrangling data -------------------------------------------
+# ___Replacing strings ----------------------------------------------------
+
+pbdbOccs.data <- pbdb.simple_replace_strings(data = pbdbOccs.data,
+                                             replace_list = set.separator_to_fix)
+
+pbdbOccs.data <- pbdbOccs.data %>%
+  mutate(family_no = as.integer(na_if(family_no, "NF")))
+
+gc()
+
+# ___Formatting author names ----------------------------------------------
+
+# Notes: A coluna accepted_attr deveria conter as autoridades taxonômicas dos
+#        nomes aceitos, mas veio vazia por alguma razão. Caso os dados sejam
+#        atualizados no futuro, esse script poderá ser expandido para formatar
+#        a coluna de autores e anos.
+
+# ___Create alternative synonym from accepted name and genus column -------
+
+pbdbOccs.data <- pbdb.format_internal_synonym_from_genus(data = pbdbOccs.data)
+
+gc()
+
+# ___Adding suffix to column names ----------------------------------------
+
+colnames(pbdbOccs.data) <- paste0("pbdb_", colnames(pbdbOccs.data))
+
+# __Saving data -----------------------------------------------------------
+
+write.csv(x = pbdbOccs.data,
           file = here("data",
                       "processed",
-                      "pbdb_occs_species-names_2025-05-06.csv"))
+                      "pbdb_occs_species-names_2025-06-01.csv"),
+          row.names = FALSE)
+
+# _Cleanup ----------------------------------------------------------------
+
+#rm(list = ls())
+#gc()
