@@ -1,4 +1,16 @@
-#### Loading packages ####
+# _Info -------------------------------------------------------------------
+##
+## Title: now_occs_species-names.R
+## Purpose:
+##
+## Author: Thaís G. P. Faria
+## Github: https://github.com/Thais-Faria
+## Date created: 2025-06-01
+## Copyright (c) Thaís G. P. Faria, 2025
+## License: GNU General Public License version 3
+##
+# _Set up -----------------------------------------------------------------
+# __Packages --------------------------------------------------------------
 
 library(here) #Operating system agnostic file paths with .Rproj
 library(stringr) #String manipulation
@@ -7,28 +19,32 @@ library(tidytable) #Brings the data.table package's fast operations to dplyr syn
 library(tidylog) #Optional, prints detailed information about changes in the dataframe during data wrangling with tidyverse functions
 library(countrycode) #Needed to summarise country names into continents
 
-#### Setting file paths ####
+# __File paths ------------------------------------------------------------
 
 now.occurrences.path <- here("data",
                              "raw",
-                             "now_occs_2025-05-06_raw.csv")
+                             "now_occs_2025-06-01_raw.csv")
 
 now.functions.path <- here("scripts",
                            "functions",
                            "cleaning_now.R")
 
-#### Loading data and functions####
+# __Loading functions -----------------------------------------------------
+
+source(now.functions.path)
+
+# __Loading data ----------------------------------------------------------
 
 now.occurrences.data <- read.delim(now.occurrences.path,
                                    na.strings = "\\N")
 
-source(now.functions.path)
-
+# __Cleanup ---------------------------------------------------------------
 rm(now.occurrences.path,
    now.functions.path)
 gc()
 
-#### Preparing function arguments ####
+# _Main -------------------------------------------------------------------
+# __Setting up function arguments -----------------------------------------
 
 select.cols_to_keep <- c("SIDNUM",
                          "SUBCLASSORSUPERORDER",
@@ -54,7 +70,8 @@ select.country_col <- "COUNTRY"
 
 select.new_name_separator <- "_"
 
-#### Filtering and fixing indet. values ####
+# __Cleaning and wrangling data -------------------------------------------
+# ___Filtering and replacing strings --------------------------------------
 
 now.taxa <- now.occurrences.data %>%
   select(all_of(select.cols_to_keep)) %>%
@@ -62,7 +79,9 @@ now.taxa <- now.occurrences.data %>%
   mutate(across(is.character,
                 ~now.fix_indet(.)))
 
-#### Adding summarised data ####
+gc()
+
+# ___Adding summarised data -----------------------------------------------
 
 now.taxa <- now.summarise_ages_by_id(data = now.occurrences.data,
                                      taxon_id = select.taxon_id_col,
@@ -70,7 +89,8 @@ now.taxa <- now.summarise_ages_by_id(data = now.occurrences.data,
                                      max_age_col = select.max_age_col) %>%
   inner_join(now.taxa, .)
 
-#### Creating new columns ####
+
+# ___Creating new columns -------------------------------------------------
 
 now.taxa <- now.create_species_name_col(data = now.taxa,
                                         new_col_name = "now_accepted_name",
@@ -180,7 +200,7 @@ age_by_sidnum <- now_data %>%
   summarise(MAX_AGE = max(MAX_AGE),
             MIN_AGE = min(MIN_AGE))
 
-continent_by_sidnum <- now_data %>%
+continent_by_sidnum <- now.occurrences.data %>%
   select(COUNTRY,
          SIDNUM) %>%
   distinct() %>%
@@ -200,15 +220,14 @@ continent_by_sidnum <- now_data %>%
 now_species <- now_taxa %>%
   filter(now_accepted_rank == "species")
 
-now_species <- now_species %>%
-  inner_join(age_by_sidnum) %>%
+now_species <- now.taxa %>%
   inner_join(continent_by_sidnum)
 
 # Salvando o arquivo
 write.csv(now_species,
           file = here("data",
                       "processed",
-                      "now_occs_species-names_2025-05-06.csv"),
+                      "now_occs_species-names_2025-06-01.csv"),
           row.names = FALSE)
 
 
