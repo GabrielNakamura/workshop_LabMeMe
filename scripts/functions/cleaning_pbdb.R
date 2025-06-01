@@ -1,4 +1,4 @@
-pbdb.simple_replace_strings <- function(data = pbdbTaxa.data,
+pbdb.simple_replace_strings <- function(data,
                                         replace_list) {
 
   if(!is.data.frame(data)){stop()}
@@ -16,7 +16,7 @@ pbdb.simple_replace_strings <- function(data = pbdbTaxa.data,
 
 }
 
-pbdb.format_attribution <- function(data = pbdbTaxa.data,
+pbdb.format_attribution <- function(data,
                                     attr_col = select.taxon_attribution_column,
                                     taxon_name_col = select.taxon_name_column,
                                     accepted_name_col = select.accepted_name_column,
@@ -112,10 +112,10 @@ pbdb.format_attribution <- function(data = pbdbTaxa.data,
 
 }
 
-pbdb.format_alternative_synonym_from_genus <- function(data = pbdbTaxa.data,
-                                                       accepted_name_col = select.accepted_name_column,
-                                                       genus_col = select.genus_column,
-                                                       delim = set.separator_to_fix$old_new_pairs){
+pbdb.format_internal_synonym_from_genus <- function(data,
+                                                    accepted_name_col = select.accepted_name_column,
+                                                    genus_col = select.genus_column,
+                                                    delim = set.separator_to_fix$old_new_pairs){
 
   if (!is.data.frame(data)) {stop('"data" must be a dataframe')}
   if (!accepted_name_col %in% colnames(data)) {stop("Column ", accepted_name_col, " not found")}
@@ -126,16 +126,19 @@ pbdb.format_alternative_synonym_from_genus <- function(data = pbdbTaxa.data,
     select(!!accepted_name_col,
            !!genus_col) %>%
     distinct() %>%
-    mutate(accepted_name_copy = eval(parse(text = accepted_name_col))) %>%
+    mutate(accepted_name_copy = eval(parse(text = accepted_name_col)),
+           accepted_name_copy = str_replace_all(accepted_name_copy, #Retirando o nome do subgênero para não ficar repetido com a coluna genus
+                                                pattern = "\\(.*\\)_",
+                                                replacement = "")) %>%
     separate_wider_delim(accepted_name_copy,
                          delim = delim,
                          names = c("accepted_genus",
                                    "rest"),
                          too_many = "merge") %>%
-    mutate(alternative_synonym = paste(eval(parse(text = genus_col)),
+    mutate(internal_synonym = paste(eval(parse(text = genus_col)),
                                        rest ,
                                        sep = delim),
-           genus_difference = eval(parse(text = accepted_name_col)) != alternative_synonym) %>%
+           genus_difference = eval(parse(text = accepted_name_col)) != internal_synonym) %>%
     select(-accepted_genus,
            -rest) %>%
     inner_join(data,.)
