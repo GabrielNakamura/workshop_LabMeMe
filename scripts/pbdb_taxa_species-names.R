@@ -16,7 +16,7 @@ library(here) #Operating system agnostic file paths with .Rproj
 library(stringr) #String manipulation
 library(dplyr) #Data wrangling with tidyverse syntax
 library(tidytable) #Brings the data.table package's fast operations to dplyr syntax
-library(tidylog) #Optional, prints detailed information about changes in the dataframe during data wrangling with tidyverse functions
+#library(tidylog) #Optional, prints detailed information about changes in the dataframe during data wrangling with tidyverse functions
 
 # __File paths ------------------------------------------------------------
 
@@ -40,8 +40,8 @@ source(functions.2.path)
 # __Loading data ----------------------------------------------------------
 
 pbdbTaxa.data <- read.csv(pbdbTaxa.path,
-                          na.strings = "",
-                          skip = 17)
+                          skip = 17,
+                          na.strings = "")
 
 # __Cleanup ---------------------------------------------------------------
 
@@ -110,7 +110,7 @@ set.typos_to_fix <- list(cols = "taxon_attr",
 # __Filtering data --------------------------------------------------------
 
 pbdbTaxa.data <- pbdbTaxa.data %>%
-  filter(accepted_rank %in% select.accepted_rank_name) %>%
+  filter(accepted_rank %in% select.accepted_rank_name) %>% #Em vez de "accepted_rank", poderia colocar a opção de seleção aqui tbm
   select(all_of(select.cols_to_keep)) %>%
   distinct()
 
@@ -119,28 +119,30 @@ gc()
 # __Cleaning and wrangling data -------------------------------------------
 # ___Replacing strings ----------------------------------------------------
 
-pbdbTaxa.data <- pbdb.simple_replace_strings(replace_list = set.separator_to_fix)
-pbdbTaxa.data <- pbdb.simple_replace_strings(replace_list = set.typos_to_fix)
+pbdbTaxa.data <- pbdb.simple_replace_strings(data = pbdbTaxa.data,
+                                             replace_list = set.separator_to_fix)
+
+pbdbTaxa.data <- pbdb.simple_replace_strings(data = pbdbTaxa.data,
+                                             replace_list = set.typos_to_fix)
 
 gc()
 
 # ___Formatting author names ----------------------------------------------
 
-pbdbTaxa.data <- pbdb.format_attribution(author_name_letter_case = "capitalized")
+pbdbTaxa.data <- pbdb.format_attribution(data = pbdbTaxa.data,
+                                         author_name_letter_case = "capitalized")
 
 gc()
 
-
 # ___Create alternative synonym from accepted name and genus column -------
 
-pbdbTaxa.data <- pbdb.format_alternative_synonym_from_genus()
+pbdbTaxa.data <- pbdb.format_internal_synonym_from_genus(data = pbdbTaxa.data)
 
 gc()
 
 # ___Adding suffix to column names ----------------------------------------
 
 colnames(pbdbTaxa.data) <- paste0("pbdb_", colnames(pbdbTaxa.data))
-
 
 # __Saving data -----------------------------------------------------------
 
