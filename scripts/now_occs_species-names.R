@@ -1,31 +1,107 @@
-#### Carregando pacotes com controle de versão ####
+#### Loading packages ####
 
-library(groundhog)
-groundhog.day <- "2025-05-01"
-groundhog.packages <- c("here",
-                        "dplyr",
-                        "stringr",
-                        "tidylog")
+library(here) #Operating system agnostic file paths with .Rproj
+library(stringr) #String manipulation
+library(dplyr) #Data wrangling with tidyverse syntax
+library(tidytable) #Brings the data.table package's fast operations to dplyr syntax
+library(tidylog) #Optional, prints detailed information about changes in the dataframe during data wrangling with tidyverse functions
+library(countrycode) #Needed to summarise country names into continents
 
-groundhog.library(groundhog.packages,
-                  groundhog.day)
-rm(groundhog.day,
-   groundhog.packages)
+#### Setting file paths ####
 
-library(countrycode)
+now.occurrences.path <- here("data",
+                             "raw",
+                             "now_occs_2025-05-06_raw.csv")
 
-#### Limpeza inicial ####
+now.functions.path <- here("scripts",
+                           "functions",
+                           "cleaning_now.R")
+
+#### Loading data and functions####
+
+now.occurrences.data <- read.delim(now.occurrences.path,
+                                   na.strings = "\\N")
+
+source(now.functions.path)
+
+rm(now.occurrences.path,
+   now.functions.path)
+gc()
+
+#### Preparing function arguments ####
+
+select.cols_to_keep <- c("SIDNUM",
+                         "SUBCLASSORSUPERORDER",
+                         "ORDER",
+                         "SUBORDERORSUPERFAMILY",
+                         "FAMILY",
+                         "SUBFAMILY",
+                         "GENUS",
+                         "SPECIES") #Uncomment bellow to check available columns
+#colnames(now.occurrences.data)
+
+select.taxon_id_col <- "SIDNUM"
+select.species_col <- "SPECIES"
+select.genus_col <- "GENUS"
+select.subfamily_col <- "SUBFAMILY"
+select.family_col <- "FAMILY"
+select.suborder_superfamily_col <- "SUBORDERORSUPERFAMILY"
+select.order_col <- "ORDER"
+select.subclass_superorder_col <- "SUBCLASSORSUPERORDER"
+select.min_age_col <- "MIN_AGE"
+select.max_age_col <- "MAX_AGE"
+select.country_col <- "COUNTRY"
+
+select.new_name_separator <- "_"
+
+#### Filtering and fixing indet. values ####
+
+now.taxa <- now.occurrences.data %>%
+  select(all_of(select.cols_to_keep)) %>%
+  distinct() %>%
+  mutate(across(is.character,
+                ~now.fix_indet(.)))
+
+#### Adding summarised data ####
+
+now.taxa <- now.summarise_ages_by_id(data = now.occurrences.data,
+                                     taxon_id = select.taxon_id_col,
+                                     min_age_col = select.min_age_col,
+                                     max_age_col = select.max_age_col) %>%
+  inner_join(now.taxa, .)
+
+#### Creating new columns ####
+
+now.taxa <- now.create_species_name_col(data = now.taxa,
+                                        new_col_name = "now_accepted_name",
+                                        species_col = select.species_col,
+                                        genus_col = select.genus_col,
+                                        sep = select.new_name_separator)
+
+now.taxa <- now.create_accepted_rank_col(data = now.taxa,
+                                         new_col_name = "now_accepted_rank",
+                                         species_col = select.species_col,
+                                         genus_col = select.genus_col,
+                                         subfamily_col = select.subfamily_col,
+                                         family_col = select.family_col,
+                                         suborder_superfamily_col = select.suborder_superfamily_col,
+                                         order_col = select.order_col,
+                                         subclass_superorder_col = select.subclass_superorder_col)
+
+
+
+
+
+
+
+
+#### Old comments to translate ####
+#### Limpeza inicial
 
 # Nesse pedaço, eu estou lendo o arquivo baixado direto do NOW com separação por tabs, por isso
 # ele é tsv e não csv, mas tenho quase certeza que um arquivo baixado pelo script do Carlos
 # "mod1_read_wrangle_now_raw.Rmd" funcionaria com esse script normalmente, só precisaria mudar
 # a função de read.delim pra read.csv.
-
-now_data <- read.delim(here("data",
-                            "raw",
-                            "now_occs_2025-05-06_raw.csv"),
-                       na.strings = "\\N")
-
 
 # A função abaixo vai servir para substituir todos os valores especificados
 #(NA, "", "\\N", "sp.", "Gen.", "gen.", "incertae sedis") por "indet.", sendo
@@ -37,13 +113,6 @@ now_data <- read.delim(here("data",
 #de uma vez. Certamente alguma função do R base deve fazer algo equivalente com
 #maior eficiência, então se alguém quiser escrever de outra forma, é bem-vind@.
 
-indet_fix <- function(col_name) {
-  case_when(
-    is.na(col_name) | col_name == "" | col_name == "\\N" | col_name == "sp." | col_name == "Gen." | col_name == "gen." | col_name == "incertae sedis" ~ "indet.",
-    TRUE ~ col_name
-  )
-}
-
 # O pipeline a seguir seleciona as colunas de interesse taxonômico e realiza as operações
 #de formatação e padronização dos dados. A parte mais complexa dela é o uso sequencial da
 #função `case_when()` (dentro da função `mutate()`) para criar a coluna de ranking taxonômico
@@ -54,6 +123,12 @@ indet_fix <- function(col_name) {
 #Como as linhas da coluna que não correspondem à nenhuma condição verdadeira são transformadas
 #em NA, a sintaxe `TRUE ~ nome da coluna` deve ser usada para preservar eventuais valores
 #anteriores.
+
+
+
+
+
+
 
 now_taxa <- now_data %>%
   select(SUBCLASSORSUPERORDER, #Selecionando colunas de interesse taxonômico
