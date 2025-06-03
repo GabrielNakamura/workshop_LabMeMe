@@ -217,10 +217,8 @@ continent_by_sidnum <- now.occurrences.data %>%
 
 # Filtrando só as espécies para o workshop de Carnivora
 
-now_species <- now_taxa %>%
-  filter(now_accepted_rank == "species")
-
 now_species <- now.taxa %>%
+  filter(now_accepted_rank == "species") %>%
   inner_join(continent_by_sidnum)
 
 # Salvando o arquivo
