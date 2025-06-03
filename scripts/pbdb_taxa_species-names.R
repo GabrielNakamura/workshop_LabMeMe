@@ -43,6 +43,13 @@ pbdbTaxa.data <- read.csv(pbdbTaxa.path,
                           skip = 17,
                           na.strings = "")
 
+
+# __Sub-setting data ------------------------------------------------------
+
+#recent species
+#pbdbTaxa.data <- pbdbTaxa.data %>%
+#  filter(lastapp_min_ma < 6)
+
 # __Cleanup ---------------------------------------------------------------
 
 rm(pbdbTaxa.path,
