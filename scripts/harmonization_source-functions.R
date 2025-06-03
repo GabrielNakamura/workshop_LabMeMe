@@ -357,7 +357,7 @@ add_to_synonymy <- function(synonymy_dtf,
 }
 
 remove_already_evaluated <- function(data,
-                                     evaluated_dtf = evaluated_pairs,
+                                     evaluated_dtf = evaluated.keys,
                                      base1_id_col = select.base1_id_col,
                                      base2_id_col = select.base2_id_col){
 
